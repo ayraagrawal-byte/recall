@@ -8,16 +8,18 @@ from app.models import Chunk
 def search_chunks(query: str, limit: int = 5):
     query_embedding = create_embedding(query)
 
+    distance = Chunk.embedding.cosine_distance(
+        query_embedding
+    ).label("distance")
+
     db = SessionLocal()
 
     try:
         results = (
-            db.query(Chunk)
+            db.query(Chunk, distance)
             .options(joinedload(Chunk.document))
             .filter(Chunk.embedding.is_not(None))
-            .order_by(
-                Chunk.embedding.cosine_distance(query_embedding)
-            )
+            .order_by(distance)
             .limit(limit)
             .all()
         )
@@ -26,14 +28,14 @@ def search_chunks(query: str, limit: int = 5):
             {
                 "content": chunk.content,
                 "page_number": chunk.page_number,
-                "filename": chunk.document.filename
+                "filename": chunk.document.filename,
+                "distance": float(distance_value)
             }
-            for chunk in results
+            for chunk, distance_value in results
         ]
 
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     query = input("Ask Recall: ")
@@ -44,4 +46,6 @@ if __name__ == "__main__":
         print("\n--------------------")
         print(f"Source: {chunk['filename']}")
         print(f"Page: {chunk['page_number']}")
+        print(f"Distance: {chunk['distance']:.4f}")
         print(chunk["content"][:500])
+        

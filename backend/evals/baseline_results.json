@@ -1,0 +1,28 @@
+{
+  "name": "vector_only_baseline",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "retrieval_limit": 5,
+  "generation_model": "gemma3:4b",
+  "results": {
+    "retrieval": {
+      "evidence_page_hits": 5,
+      "answerable_questions": 5,
+      "evidence_page_hit_rate": 1.0
+    },
+    "generation": {
+      "correct_answers": 4,
+      "answerable_questions": 5,
+      "answer_accuracy": 0.8,
+      "unanswerable_refusals": 0,
+      "unanswerable_questions": 1,
+      "refusal_rate": 0.0
+    }
+  },
+  "observations": [
+    "All answerable questions retrieved at least one expected evidence page in the top 5.",
+    "The participant-count question retrieved relevant pages but generated 77 instead of the expected 85.",
+    "The unanswerable medication question did not trigger abstention.",
+    "Cosine distance alone cannot separate answerable from unanswerable questions.",
+    "The participant-count question had a best distance of 0.6240 while the unanswerable medication question had a best distance of 0.6219."
+  ]
+}
