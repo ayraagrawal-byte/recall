@@ -25,14 +25,15 @@ def search_chunks(query: str, limit: int = 5):
         )
 
         return [
-            {
-                "content": chunk.content,
-                "page_number": chunk.page_number,
-                "filename": chunk.document.filename,
-                "distance": float(distance_value)
-            }
-            for chunk, distance_value in results
-        ]
+        {
+            "id": chunk.id,
+            "content": chunk.content,
+            "page_number": chunk.page_number,
+            "filename": chunk.document.filename,
+            "distance": float(distance_value)
+        }
+        for chunk, distance_value in results
+    ]
 
     finally:
         db.close()
@@ -40,12 +41,14 @@ def search_chunks(query: str, limit: int = 5):
 if __name__ == "__main__":
     query = input("Ask Recall: ")
 
-    results = search_chunks(query)
+    results = search_chunks(query, limit=39)
 
-    for chunk in results:
+    for rank, chunk in enumerate(results, start=1):
         print("\n--------------------")
+        print(f"Rank: {rank}")
         print(f"Source: {chunk['filename']}")
         print(f"Page: {chunk['page_number']}")
         print(f"Distance: {chunk['distance']:.4f}")
-        print(chunk["content"][:500])
+        print(chunk["content"][:300])
+        print(f"Chunk ID: {chunk['id']}")
         

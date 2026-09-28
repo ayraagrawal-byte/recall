@@ -1,6 +1,7 @@
 import requests
 
-from app.retrieval import search_chunks
+from app.hybrid_retrieval import get_candidates
+from app.reranker import rerank_chunks
 
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -18,7 +19,16 @@ def build_citations(chunks):
     return citations
 
 def answer_question(question: str):
-    chunks = search_chunks(question, limit=5)
+    candidates = get_candidates(
+        question,
+        limit=20
+    )
+
+    chunks = rerank_chunks(
+        question,
+        candidates,
+        limit=5
+    )
 
     context_parts = []
 

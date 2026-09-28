@@ -1,59 +1,60 @@
 [
   {
-    "id": 1,
     "question": "How did value affirmation affect participants' cortisol responses to stress?",
     "expected_facts": [
-      "Value-affirmation participants had significantly lower cortisol responses than control participants."
+      "lower cortisol than controls"
     ],
     "expected_pages": [1, 3, 4],
+    "expected_chunk_ids": [],
     "answerable": true
   },
   {
-    "id": 2,
     "question": "At what times after stress onset did value-affirmation participants show significantly lower cortisol responses?",
     "expected_facts": [
-      "20 minutes after stress onset",
-      "30 minutes after stress onset",
-      "45 minutes after stress onset"
+      "20 minutes",
+      "30 minutes",
+      "45 minutes"
     ],
     "expected_pages": [3],
+    "expected_chunk_ids": [],
     "answerable": true
   },
   {
-    "id": 3,
     "question": "How many participants were included in the study?",
     "expected_facts": [
       "85 participants"
     ],
     "expected_pages": [1, 2],
+    "expected_chunk_ids": [7],
     "answerable": true
   },
   {
-    "id": 4,
     "question": "What stress task did participants complete?",
     "expected_facts": [
       "Trier Social Stress Task",
-      "Participants prepared and delivered a speech",
-      "Participants completed a mental arithmetic task"
+      "speech",
+      "mental arithmetic"
     ],
     "expected_pages": [2],
+    "expected_chunk_ids": [],
     "answerable": true
   },
   {
-    "id": 5,
     "question": "How did self-resources influence the effect of value affirmation on psychological stress?",
     "expected_facts": [
-      "Self-resources moderated the relationship between value affirmation and psychological stress.",
-      "Participants with high self-resources who affirmed personal values reported the least psychological stress."
+      "moderation",
+      "high self-resources",
+      "affirmation least stress"
     ],
     "expected_pages": [1, 4],
+    "expected_chunk_ids": [],
     "answerable": true
   },
   {
-    "id": 6,
     "question": "What medications were participants taking during the study?",
     "expected_facts": [],
     "expected_pages": [],
+    "expected_chunk_ids": [],
     "answerable": false
   }
 ]
