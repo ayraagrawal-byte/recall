@@ -1,12 +1,13 @@
-import fitz
+import pymupdf
 import os
 
 from app.database import SessionLocal
 from app.models import Document, Chunk
+from app.embeddings import create_embedding
 
 
 def extract_pages(pdf_path: str):
-    document = fitz.open(pdf_path)
+    document = pymupdf.open(pdf_path)
 
     pages = []
 
@@ -56,16 +57,14 @@ def ingest_document(pdf_path: str):
 
         db.add(document)
         db.flush()
-
         for chunk in chunks:
             db_chunk = Chunk(
                 document_id=document.id,
                 content=chunk["content"],
-                page_number=chunk["page_number"]
-            )
-
+                page_number=chunk["page_number"],
+                embedding=create_embedding(chunk["content"])
+                )
             db.add(db_chunk)
-
         db.commit()
 
         return document.id

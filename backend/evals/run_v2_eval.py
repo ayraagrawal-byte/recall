@@ -2,8 +2,7 @@ import json
 import time
 from pathlib import Path
 
-from app.hybrid_retrieval import get_candidates
-from app.reranker import rerank_chunks
+from app.retrieval_v2 import search_chunks_v2
 
 
 EVAL_FILE = Path(__file__).parent / "eval_questions.json"
@@ -71,14 +70,9 @@ def evaluate():
 
         start_time = time.perf_counter()
 
-        candidates = get_candidates(
+        results = search_chunks_v2(
             question,
-            limit=20
-        )
-
-        results = rerank_chunks(
-            question,
-            candidates,
+            candidate_limit=20,
             limit=5
         )
 
@@ -187,12 +181,19 @@ def evaluate():
         print("\nTop 5:")
 
         for rank, result in enumerate(results, start=1):
+            rerank_score = result.get("rerank_score")
+
+            if rerank_score is not None:
+                rerank_text = f"{rerank_score:.4f}"
+            else:
+                rerank_text = "N/A"
+
             print(
                 f"{rank}. "
                 f"{result['filename']} | "
                 f"Chunk {result['id']} | "
                 f"Page {result['page_number']} | "
-                f"Rerank {result['rerank_score']:.4f}"
+                f"Rerank {rerank_text}"
             )
 
             print(
@@ -223,7 +224,7 @@ def evaluate():
     )
 
     print("\n========================================")
-    print("V1 HYBRID + RERANKER RETRIEVAL SUMMARY")
+    print("V2 RETRIEVAL SUMMARY")
     print("========================================")
 
     print(f"Questions: {total}")

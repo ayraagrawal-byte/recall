@@ -1,0 +1,388 @@
+[
+  {
+    "question_number": 1,
+    "question": "How did value affirmation affect participants' cortisol responses to stress?",
+    "answerable": true,
+    "expected_facts": [
+      "lower cortisol than controls"
+    ],
+    "answer": "Value affirmation participants had significantly lower cortisol responses to stress compared with control participants, controlling for basal cortisol. Specifically, paired t tests revealed that value-afﬁrmation participants did not have significant cortisol increases 20, 30, or 45 min after stress onset, whereas control participants had significant increases.",
+    "citations": [
+      "[sample.pdf, p. 4]",
+      "[sample.pdf, p. 3]",
+      "[sample.pdf, p. 1]"
+    ],
+    "latency_seconds": 62.399
+  },
+  {
+    "question_number": 2,
+    "question": "At what times after stress onset did value-affirmation participants show significantly lower cortisol responses?",
+    "answerable": true,
+    "expected_facts": [
+      "20 minutes",
+      "30 minutes",
+      "45 minutes"
+    ],
+    "answer": "Value-affirmation participants showed significantly lower cortisol responses 20 min after stress onset, 30 min after stress onset, and 45 min after stress onset.",
+    "citations": [
+      "[sample.pdf, p. 3]",
+      "[sample.pdf, p. 4]",
+      "[sample.pdf, p. 1]"
+    ],
+    "latency_seconds": 68.184
+  },
+  {
+    "question_number": 3,
+    "question": "How many participants were included in the value-affirmation stress study?",
+    "answerable": true,
+    "expected_facts": [
+      "85 participants"
+    ],
+    "answer": "Eighty-five undergraduates participated in the study.",
+    "citations": [
+      "[sample.pdf, p. 2]",
+      "[sample.pdf, p. 4]",
+      "[sample3.pdf, p. 44]"
+    ],
+    "latency_seconds": 58.109
+  },
+  {
+    "question_number": 4,
+    "question": "What stress task did participants complete?",
+    "answerable": true,
+    "expected_facts": [
+      "Trier Social Stress Task",
+      "speech",
+      "mental arithmetic"
+    ],
+    "answer": "Participants completed a four-minute speech and a counting backward task under harassing conditions.",
+    "citations": [
+      "[sample.pdf, p. 2]",
+      "[sample.pdf, p. 1]",
+      "[sample.pdf, p. 3]"
+    ],
+    "latency_seconds": 71.218
+  },
+  {
+    "question_number": 5,
+    "question": "How did self-resources influence the effect of value affirmation on psychological stress?",
+    "answerable": true,
+    "expected_facts": [
+      "self-resources moderated the effect of value affirmation",
+      "higher self-resources were associated with lower stress in the value-affirmation condition"
+    ],
+    "answer": "Specifically, a significant Self-Resources \u0002 Condition interaction was found for the pretask stress appraisals, \u0002 5 .34, t(55) 5 2.26, p 5 .03, R2 5 .26. Simple slopes tests showed that increases in self-resources were associated with lower stress appraisals in the value-afﬁrmation condition, \u0002 5 \u0003.67, t(28) 5 \u00034.685, p < .001, R2 5 .45, but not in the control condition, \u0002 5 \u0003.06, t(26) 5 \u00030.28, p 5 .78, R2 5 .003.",
+    "citations": [
+      "[sample.pdf, p. 3]",
+      "[sample.pdf, p. 2]",
+      "[sample.pdf, p. 4]"
+    ],
+    "latency_seconds": 102.333
+  },
+  {
+    "question_number": 6,
+    "question": "Did value affirmation change participants' cardiovascular responses to the stress tasks?",
+    "answerable": true,
+    "expected_facts": [
+      "no significant differences between conditions",
+      "heart rate",
+      "blood pressure"
+    ],
+    "answer": "Participants in the value-affirmation condition had equivalently elevated heart rate responses to the stress tasks, and there were no significant condition differences for heart rate, F(1, 68) 5 0.11, p 5 .74, Z2 5 .002.",
+    "citations": [
+      "[sample.pdf, p. 4]",
+      "[sample.pdf, p. 3]",
+      "[sample.pdf, p. 1]"
+    ],
+    "latency_seconds": 73.849
+  },
+  {
+    "question_number": 7,
+    "question": "How many infants participated in the gaze-following study, and what ages were tested?",
+    "answerable": true,
+    "expected_facts": [
+      "96 infants",
+      "9 months",
+      "10 months",
+      "11 months",
+      "32 infants at each age"
+    ],
+    "answer": "96 infants participated in the gaze-following study, and they were tested at 9, 10, and 11 months of age. The 9-month-olds' range was 267 to 281 days, the 10-month-olds' range was 297 to 311 days, and the 11-month-olds' range was 328 to 343 days.",
+    "citations": [
+      "[sample2.pdf, p. 1]",
+      "[sample2.pdf, p. 2]",
+      "[sample3.pdf, p. 44]"
+    ],
+    "latency_seconds": 76.151
+  },
+  {
+    "question_number": 8,
+    "question": "How did 9-month-olds differ from 10- and 11-month-olds when the adult turned with open versus closed eyes?",
+    "answerable": true,
+    "expected_facts": [
+      "9-month-olds did not respond differentially",
+      "10- and 11-month-olds followed significantly more in the open-eyes condition"
+    ],
+    "answer": "10- and 11-month-olds sharply differentiate between open and closed eyes, looking specifically at the adult’s target when the adult turns with open eyes. The 9-month-olds do not respond differentially.",
+    "citations": [
+      "[sample2.pdf, p. 6]",
+      "[sample2.pdf, p. 1]",
+      "[sample2.pdf, p. 4]"
+    ],
+    "latency_seconds": 60.247
+  },
+  {
+    "question_number": 9,
+    "question": "What did the researchers conclude about when true gaze following develops?",
+    "answerable": true,
+    "expected_facts": [
+      "about 10 to 11 months",
+      "9-month-olds head follow rather than gaze follow"
+    ],
+    "answer": "The researchers concluded that genuine gaze following develops at about 10 to 11 months of life. They state, “Our data lend support to the idea that genuine gaze following develops at about 10 to 11 months of life and emerges from simpler beginnings.”",
+    "citations": [
+      "[sample2.pdf, p. 7]",
+      "[sample2.pdf, p. 1]",
+      "[sample2.pdf, p. 6]",
+      "[sample2.pdf, p. 2]"
+    ],
+    "latency_seconds": 79.311
+  },
+  {
+    "question_number": 10,
+    "question": "How were the open-eyes and closed-eyes conditions different during the experiment?",
+    "answerable": true,
+    "expected_facts": [
+      "open-eyes condition adult turned with eyes open",
+      "closed-eyes condition adult closed her eyes before turning",
+      "same head movement"
+    ],
+    "answer": "For the open-eyes condition, the experimenter turned her head and had open eyes toward the target. For the closed-eyes condition, she closed her eyes immediately before performing the same head movement.",
+    "citations": [
+      "[sample2.pdf, p. 3]",
+      "[sample2.pdf, p. 5]",
+      "[sample2.pdf, p. 2]"
+    ],
+    "latency_seconds": 71.902
+  },
+  {
+    "question_number": 11,
+    "question": "What relationship was found between gaze-following behavior in infancy and later language development?",
+    "answerable": true,
+    "expected_facts": [
+      "positive relationship",
+      "gaze following at 10 to 11 months predicted later language or communication measures"
+    ],
+    "answer": "Results also showed a strong positive correlation between gaze-following behavior at 10–11 months and subsequent language scores at 18 months.",
+    "citations": [
+      "[sample2.pdf, p. 1]",
+      "[sample2.pdf, p. 2]",
+      "[sample2.pdf, p. 9]",
+      "[sample2.pdf, p. 7]"
+    ],
+    "latency_seconds": 72.613
+  },
+  {
+    "question_number": 12,
+    "question": "How many infants looked at the correct target in the open-eyes condition compared with the closed-eyes condition?",
+    "answerable": true,
+    "expected_facts": [
+      "33 of 48",
+      "19 of 48"
+    ],
+    "answer": "Overall, 33 of 48 infants in the open-eyes condition looked at the correct target, whereas 19 of 48 infants looked at the correct target in the closed-eyes condition.",
+    "citations": [
+      "[sample2.pdf, p. 4]",
+      "[sample2.pdf, p. 6]",
+      "[sample2.pdf, p. 2]"
+    ],
+    "latency_seconds": 78.442
+  },
+  {
+    "question_number": 13,
+    "question": "How many children were included in the final analyses of the study on children's understanding of the word two?",
+    "answerable": true,
+    "expected_facts": [
+      "18 children"
+    ],
+    "answer": "Fourteen children were included in the final analyses of the study.",
+    "citations": [
+      "[sample3.pdf, p. 39]",
+      "[sample3.pdf, p. 59]",
+      "[sample3.pdf, p. 24]",
+      "[sample3.pdf, p. 44]",
+      "[sample3.pdf, p. 40]"
+    ],
+    "latency_seconds": 8.651
+  },
+  {
+    "question_number": 14,
+    "question": "What age range was tested in the study on children's understanding of the word two?",
+    "answerable": true,
+    "expected_facts": [
+      "13 to 29 months"
+    ],
+    "answer": "The study tested infants between 13 and 29 months of age.",
+    "citations": [
+      "[sample3.pdf, p. 39]",
+      "[sample3.pdf, p. 67]",
+      "[sample3.pdf, p. 59]",
+      "[sample3.pdf, p. 44]",
+      "[sample3.pdf, p. 42]"
+    ],
+    "latency_seconds": 8.925
+  },
+  {
+    "question_number": 15,
+    "question": "What was the primary method used to test children's comprehension of the word two?",
+    "answerable": true,
+    "expected_facts": [
+      "preferential looking",
+      "set of two objects",
+      "set of three objects"
+    ],
+    "answer": "The primary method used to test children's comprehension of the word two was the preferential looking task, which measured their ability to associate visual stimuli, sets of objects ranging from one to three, with an auditory cue that labeled one of the sets.",
+    "citations": [
+      "[sample3.pdf, p. 43]",
+      "[sample3.pdf, p. 56]",
+      "[sample3.pdf, p. 59]",
+      "[sample3.pdf, p. 57]"
+    ],
+    "latency_seconds": 67.383
+  },
+  {
+    "question_number": 16,
+    "question": "Did children overall look longer at two objects when they heard the set of two labeled?",
+    "answerable": true,
+    "expected_facts": [
+      "no overall main effect of condition",
+      "participants spent an equal proportion of time looking at two across the label-two and label-three conditions"
+    ],
+    "answer": "Children overall did not look longer at two objects when they heard the set of two labeled.",
+    "citations": [
+      "[sample3.pdf, p. 66]",
+      "[sample3.pdf, p. 58]",
+      "[sample3.pdf, p. 3]",
+      "[sample3.pdf, p. 44]"
+    ],
+    "latency_seconds": 49.553
+  },
+  {
+    "question_number": 17,
+    "question": "How was age related to children's performance in the preferential-looking task?",
+    "answerable": true,
+    "expected_facts": [
+      "age significantly predicted performance",
+      "older participants were less likely to look longer at two in the label-two condition"
+    ],
+    "answer": "The passage on page 57 states: “The motivation behind this initial analysis was to investigate the hypothesis that children comprehend “two” long before they are able to succeed on more demanding, explicit tasks, and thus be labeled two-knowers.” This suggests the study looked for a relationship between age and performance on the preferential-looking task, but found no main effect of condition.",
+    "citations": [
+      "[sample3.pdf, p. 57]",
+      "[sample3.pdf, p. 43]",
+      "[sample3.pdf, p. 44]",
+      "[sample3.pdf, p. 56]"
+    ],
+    "latency_seconds": 57.008
+  },
+  {
+    "question_number": 18,
+    "question": "How did children perform on the explicit Point-to-X number comprehension task?",
+    "answerable": true,
+    "expected_facts": [
+      "the vast majority did not succeed",
+      "only one participant seemed to succeed"
+    ],
+    "answer": "Proportion looking at two was not significantly higher than chance on any given trial for any age category.",
+    "citations": [
+      "[sample3.pdf, p. 56]",
+      "[sample3.pdf, p. 57]",
+      "[sample3.pdf, p. 3]",
+      "[sample3.pdf, p. 43]"
+    ],
+    "latency_seconds": 50.482
+  },
+  {
+    "question_number": 19,
+    "question": "What medications were participants taking during the value-affirmation study?",
+    "answerable": false,
+    "expected_facts": [],
+    "answer": "The provided context does not contain enough information.",
+    "citations": [
+      "[sample.pdf, p. 4]",
+      "[sample.pdf, p. 3]",
+      "[sample.pdf, p. 2]",
+      "[sample3.pdf, p. 44]"
+    ],
+    "latency_seconds": 55.756
+  },
+  {
+    "question_number": 20,
+    "question": "What were the annual household incomes of the families in the gaze-following study?",
+    "answerable": false,
+    "expected_facts": [],
+    "answer": "The provided context does not contain enough information.",
+    "citations": [
+      "[sample2.pdf, p. 1]",
+      "[sample2.pdf, p. 6]",
+      "[sample2.pdf, p. 2]"
+    ],
+    "latency_seconds": 59.231
+  },
+  {
+    "question_number": 21,
+    "question": "What were the names of the infants who participated in the gaze-following study?",
+    "answerable": false,
+    "expected_facts": [],
+    "answer": "The provided context does not contain enough information.",
+    "citations": [
+      "[sample2.pdf, p. 1]",
+      "[sample2.pdf, p. 3]",
+      "[sample2.pdf, p. 2]",
+      "[sample3.pdf, p. 44]"
+    ],
+    "latency_seconds": 58.427
+  },
+  {
+    "question_number": 22,
+    "question": "What occupations did the parents of children in the study on the word two have?",
+    "answerable": false,
+    "expected_facts": [],
+    "answer": "The provided context does not contain enough information.",
+    "citations": [
+      "[sample3.pdf, p. 38]",
+      "[sample3.pdf, p. 43]",
+      "[sample3.pdf, p. 3]",
+      "[sample3.pdf, p. 67]",
+      "[sample3.pdf, p. 42]"
+    ],
+    "latency_seconds": 55.135
+  },
+  {
+    "question_number": 23,
+    "question": "What were the children's favorite toys in the study on understanding the word two?",
+    "answerable": false,
+    "expected_facts": [],
+    "answer": "The provided context does not contain enough information.",
+    "citations": [
+      "[sample3.pdf, p. 41]",
+      "[sample3.pdf, p. 3]",
+      "[sample3.pdf, p. 59]",
+      "[sample3.pdf, p. 1]",
+      "[sample3.pdf, p. 19]"
+    ],
+    "latency_seconds": 64.838
+  },
+  {
+    "question_number": 24,
+    "question": "What were participants' final university course grades after completing the value-affirmation study?",
+    "answerable": false,
+    "expected_facts": [],
+    "answer": "The provided context does not contain enough information to answer the question.",
+    "citations": [
+      "[sample.pdf, p. 2]",
+      "[sample3.pdf, p. 44]",
+      "[sample.pdf, p. 4]"
+    ],
+    "latency_seconds": 58.643
+  }
+]

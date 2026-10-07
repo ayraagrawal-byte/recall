@@ -4,8 +4,10 @@
     "expected_facts": [
       "lower cortisol than controls"
     ],
-    "expected_pages": [1, 3, 4],
-    "expected_chunk_ids": [],
+    "expected_document": "sample.pdf",
+    "expected_pages": [3],
+    "primary_chunk_ids": [17],
+    "expected_chunk_ids": [17, 18, 24, 2],
     "answerable": true
   },
   {
@@ -15,17 +17,21 @@
       "30 minutes",
       "45 minutes"
     ],
+    "expected_document": "sample.pdf",
     "expected_pages": [3],
-    "expected_chunk_ids": [],
+    "primary_chunk_ids": [18],
+    "expected_chunk_ids": [18],
     "answerable": true
   },
   {
-    "question": "How many participants were included in the study?",
+    "question": "How many participants were included in the value-affirmation stress study?",
     "expected_facts": [
       "85 participants"
     ],
-    "expected_pages": [1, 2],
-    "expected_chunk_ids": [7],
+    "expected_document": "sample.pdf",
+    "expected_pages": [1],
+    "primary_chunk_ids": [1],
+    "expected_chunk_ids": [1],
     "answerable": true
   },
   {
@@ -35,25 +41,235 @@
       "speech",
       "mental arithmetic"
     ],
+    "expected_document": "sample.pdf",
     "expected_pages": [2],
-    "expected_chunk_ids": [],
+    "primary_chunk_ids": [10],
+    "expected_chunk_ids": [10],
     "answerable": true
   },
   {
     "question": "How did self-resources influence the effect of value affirmation on psychological stress?",
     "expected_facts": [
-      "moderation",
-      "high self-resources",
-      "affirmation least stress"
+      "self-resources moderated the effect of value affirmation",
+      "higher self-resources were associated with lower stress in the value-affirmation condition"
     ],
-    "expected_pages": [1, 4],
-    "expected_chunk_ids": [],
+    "expected_document": "sample.pdf",
+    "expected_pages": [4],
+    "primary_chunk_ids": [23],
+    "expected_chunk_ids": [23, 22, 2],
     "answerable": true
   },
   {
-    "question": "What medications were participants taking during the study?",
+    "question": "Did value affirmation change participants' cardiovascular responses to the stress tasks?",
+    "expected_facts": [
+      "no significant differences between conditions",
+      "heart rate",
+      "blood pressure"
+    ],
+    "expected_document": "sample.pdf",
+    "expected_pages": [3],
+    "primary_chunk_ids": [19],
+    "expected_chunk_ids": [19],
+    "answerable": true
+  },
+  {
+    "question": "How many infants participated in the gaze-following study, and what ages were tested?",
+    "expected_facts": [
+      "96 infants",
+      "9 months",
+      "10 months",
+      "11 months",
+      "32 infants at each age"
+    ],
+    "expected_document": "sample2.pdf",
+    "expected_pages": [2],
+    "primary_chunk_ids": [51],
+    "expected_chunk_ids": [51],
+    "answerable": true
+  },
+  {
+    "question": "How did 9-month-olds differ from 10- and 11-month-olds when the adult turned with open versus closed eyes?",
+    "expected_facts": [
+      "9-month-olds did not respond differentially",
+      "10- and 11-month-olds followed significantly more in the open-eyes condition"
+    ],
+    "expected_document": "sample2.pdf",
+    "expected_pages": [4],
+    "primary_chunk_ids": [61],
+    "expected_chunk_ids": [61, 72, 79, 40],
+    "answerable": true
+  },
+  {
+    "question": "What did the researchers conclude about when true gaze following develops?",
+    "expected_facts": [
+      "about 10 to 11 months",
+      "9-month-olds head follow rather than gaze follow"
+    ],
+    "expected_document": "sample2.pdf",
+    "expected_pages": [6],
+    "primary_chunk_ids": [73],
+    "expected_chunk_ids": [73],
+    "answerable": true
+  },
+  {
+    "question": "How were the open-eyes and closed-eyes conditions different during the experiment?",
+    "expected_facts": [
+      "open-eyes condition adult turned with eyes open",
+      "closed-eyes condition adult closed her eyes before turning",
+      "same head movement"
+    ],
+    "expected_document": "sample2.pdf",
+    "expected_pages": [3],
+    "primary_chunk_ids": [54],
+    "expected_chunk_ids": [54],
+    "answerable": true
+  },
+  {
+    "question": "What relationship was found between gaze-following behavior in infancy and later language development?",
+    "expected_facts": [
+      "positive relationship",
+      "gaze following at 10 to 11 months predicted later language or communication measures"
+    ],
+    "expected_document": "sample2.pdf",
+    "expected_pages": [5],
+    "primary_chunk_ids": [68],
+    "expected_chunk_ids": [68, 41, 80],
+    "answerable": true
+  },
+  {
+    "question": "How many infants looked at the correct target in the open-eyes condition compared with the closed-eyes condition?",
+    "expected_facts": [
+      "33 of 48",
+      "19 of 48"
+    ],
+    "expected_document": "sample2.pdf",
+    "expected_pages": [4],
+    "primary_chunk_ids": [62],
+    "expected_chunk_ids": [62],
+    "answerable": true
+  },
+  {
+    "question": "How many children were included in the final analyses of the study on children's understanding of the word two?",
+    "expected_facts": [
+      "18 children"
+    ],
+    "expected_document": "sample3.pdf",
+    "expected_pages": [44],
+    "primary_chunk_ids": [222],
+    "expected_chunk_ids": [222],
+    "answerable": true
+  },
+  {
+    "question": "What age range was tested in the study on children's understanding of the word two?",
+    "expected_facts": [
+      "13 to 29 months"
+    ],
+    "expected_document": "sample3.pdf",
+    "expected_pages": [44],
+    "primary_chunk_ids": [222],
+    "expected_chunk_ids": [222],
+    "answerable": true
+  },
+  {
+    "question": "What was the primary method used to test children's comprehension of the word two?",
+    "expected_facts": [
+      "preferential looking",
+      "set of two objects",
+      "set of three objects"
+    ],
+    "expected_document": "sample3.pdf",
+    "expected_pages": [42],
+    "primary_chunk_ids": [217],
+    "expected_chunk_ids": [217, 220],
+    "answerable": true
+  },
+  {
+    "question": "Did children overall look longer at two objects when they heard the set of two labeled?",
+    "expected_facts": [
+      "no overall main effect of condition",
+      "participants spent an equal proportion of time looking at two across the label-two and label-three conditions"
+    ],
+    "expected_document": "sample3.pdf",
+    "expected_pages": [57],
+    "primary_chunk_ids": [257],
+    "expected_chunk_ids": [257, 284, 104],
+    "answerable": true
+  },
+  {
+    "question": "How was age related to children's performance in the preferential-looking task?",
+    "expected_facts": [
+      "age significantly predicted performance",
+      "older participants were less likely to look longer at two in the label-two condition"
+    ],
+    "expected_document": "sample3.pdf",
+    "expected_pages": [54],
+    "primary_chunk_ids": [248],
+    "expected_chunk_ids": [248, 105, 259],
+    "answerable": true
+  },
+  {
+    "question": "How did children perform on the explicit Point-to-X number comprehension task?",
+    "expected_facts": [
+      "the vast majority did not succeed",
+      "only one participant seemed to succeed"
+    ],
+    "expected_document": "sample3.pdf",
+    "expected_pages": [52],
+    "primary_chunk_ids": [243],
+    "expected_chunk_ids": [243],
+    "answerable": true
+  },
+  {
+    "question": "What medications were participants taking during the value-affirmation study?",
     "expected_facts": [],
+    "expected_document": null,
     "expected_pages": [],
+    "primary_chunk_ids": [],
+    "expected_chunk_ids": [],
+    "answerable": false
+  },
+  {
+    "question": "What were the annual household incomes of the families in the gaze-following study?",
+    "expected_facts": [],
+    "expected_document": null,
+    "expected_pages": [],
+    "primary_chunk_ids": [],
+    "expected_chunk_ids": [],
+    "answerable": false
+  },
+  {
+    "question": "What were the names of the infants who participated in the gaze-following study?",
+    "expected_facts": [],
+    "expected_document": null,
+    "expected_pages": [],
+    "primary_chunk_ids": [],
+    "expected_chunk_ids": [],
+    "answerable": false
+  },
+  {
+    "question": "What occupations did the parents of children in the study on the word two have?",
+    "expected_facts": [],
+    "expected_document": null,
+    "expected_pages": [],
+    "primary_chunk_ids": [],
+    "expected_chunk_ids": [],
+    "answerable": false
+  },
+  {
+    "question": "What were the children's favorite toys in the study on understanding the word two?",
+    "expected_facts": [],
+    "expected_document": null,
+    "expected_pages": [],
+    "primary_chunk_ids": [],
+    "expected_chunk_ids": [],
+    "answerable": false
+  },
+  {
+    "question": "What were participants' final university course grades after completing the value-affirmation study?",
+    "expected_facts": [],
+    "expected_document": null,
+    "expected_pages": [],
+    "primary_chunk_ids": [],
     "expected_chunk_ids": [],
     "answerable": false
   }
