@@ -1,4 +1,8 @@
+
+import json
 import re
+import time
+
 import requests
 
 from app.retrieval_v2 import search_chunks_v2
@@ -14,7 +18,7 @@ def build_citations(chunks):
     for chunk in chunks:
         citation = {
             "filename": chunk["filename"],
-            "page": chunk["page_number"]
+            "page": chunk["page_number"],
         }
 
         if citation not in citations:
@@ -27,15 +31,14 @@ def parse_response(response_text, chunks):
     source_match = re.search(
         r"SOURCES:\s*\[([0-9,\s]*)\]",
         response_text,
-        re.IGNORECASE
+        re.IGNORECASE,
     )
 
-    # Remove the SOURCES line from the answer shown to the user.
     answer = re.sub(
         r"\n?\s*SOURCES:\s*\[[0-9,\s]*\]\s*$",
         "",
         response_text,
-        flags=re.IGNORECASE
+        flags=re.IGNORECASE,
     ).strip()
 
     citations = []
@@ -51,13 +54,12 @@ def parse_response(response_text, chunks):
 
             index = int(source_id) - 1
 
-            # Only accept IDs that correspond to retrieved chunks.
             if 0 <= index < len(chunks):
                 chunk = chunks[index]
 
                 citation = {
                     "filename": chunk["filename"],
-                    "page": chunk["page_number"]
+                    "page": chunk["page_number"],
                 }
 
                 if citation not in citations:
@@ -66,13 +68,11 @@ def parse_response(response_text, chunks):
     return answer, citations
 
 
-def answer_question(question: str):
-    chunks = search_chunks_v2(
-        question,
-        candidate_limit=20,
-        limit=5
-    )
-
+def build_prompt(question, chunks):
+    """
+    Build the same grounded prompt for both regular
+    and streaming responses.
+    """
     context_parts = []
 
     for index, chunk in enumerate(chunks, start=1):
@@ -88,7 +88,7 @@ Content:
 
     context = "\n".join(context_parts)
 
-    prompt = f"""
+    return f"""
 You are answering a question about research papers.
 
 Use ONLY the provided context. Do not use outside knowledge.
@@ -128,6 +128,34 @@ Context:
 Answer:
 """
 
+
+def answer_question(question: str):
+    """
+    Standard non-streaming RAG answer.
+    Used by the existing /api/v1/query endpoint.
+    """
+    start_time = time.perf_counter()
+
+    # STEP 1: Retrieve relevant passages.
+    chunks = search_chunks_v2(
+        question,
+        candidate_limit=20,
+        limit=5,
+    )
+
+    retrieval_time = time.perf_counter() - start_time
+
+    print(
+        f"[Recall] Retrieval: {retrieval_time:.2f}s",
+        flush=True,
+    )
+
+    # STEP 2: Build the grounded prompt.
+    prompt = build_prompt(question, chunks)
+
+    # STEP 3: Generate the answer.
+    generation_start = time.perf_counter()
+
     response = requests.post(
         OLLAMA_URL,
         json={
@@ -135,25 +163,168 @@ Answer:
             "prompt": prompt,
             "stream": False,
             "options": {
-                "num_predict": 250
-            }
+                "num_predict": 250,
+            },
         },
-        timeout=120
+        timeout=120,
     )
 
     response.raise_for_status()
 
+    generation_time = time.perf_counter() - generation_start
+
+    print(
+        f"[Recall] Generation: {generation_time:.2f}s",
+        flush=True,
+    )
+
+    # STEP 4: Parse answer and citations.
     raw_response = response.json()["response"]
 
     answer, citations = parse_response(
         raw_response,
-        chunks
+        chunks,
+    )
+
+    total_time = time.perf_counter() - start_time
+
+    print(
+        f"[Recall] Total: {total_time:.2f}s",
+        flush=True,
     )
 
     return {
         "answer": answer,
-        "citations": citations
+        "citations": citations,
     }
+
+
+def stream_answer(question: str):
+    """
+    Stream Ollama-generated answer text while preserving
+    Recall's existing source citation filtering.
+
+    Debug logs show whether Ollama generates chunks
+    progressively or all at once.
+    """
+    start_time = time.perf_counter()
+
+    # STEP 1: Retrieve relevant passages.
+    chunks = search_chunks_v2(
+        question,
+        candidate_limit=20,
+        limit=5,
+    )
+
+    retrieval_time = time.perf_counter() - start_time
+
+    print(
+        f"[Recall] Streaming retrieval: {retrieval_time:.2f}s",
+        flush=True,
+    )
+
+    # STEP 2: Build the same prompt as regular answering.
+    prompt = build_prompt(question, chunks)
+
+    # STEP 3: Start streaming from Ollama.
+    generation_start = time.perf_counter()
+
+    full_response = ""
+    visible_answer = ""
+
+    with requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": True,
+            "options": {
+                "num_predict": 250,
+            },
+        },
+        stream=True,
+        timeout=120,
+    ) as response:
+
+        response.raise_for_status()
+
+        for line in response.iter_lines():
+            if not line:
+                continue
+
+            payload = json.loads(line)
+
+            token = payload.get("response", "")
+            full_response += token
+
+            # DEBUG: Print each chunk as Ollama sends it.
+            if token:
+                print(
+                    f"[Recall] Ollama chunk: {token!r}",
+                    flush=True,
+                )
+
+            # Keep the last 50 characters buffered to
+            # avoid showing the SOURCES metadata.
+            safe_length = max(
+                0,
+                len(full_response) - 50,
+            )
+
+            safe_text = full_response[:safe_length]
+
+            if len(safe_text) > len(visible_answer):
+                delta = safe_text[len(visible_answer):]
+                visible_answer = safe_text
+
+                yield {
+                    "type": "token",
+                    "content": delta,
+                }
+
+    generation_time = time.perf_counter() - generation_start
+
+    print(
+        f"[Recall] Streaming generation: "
+        f"{generation_time:.2f}s",
+        flush=True,
+    )
+
+    # STEP 4: Parse the final answer and citations.
+    answer, citations = parse_response(
+        full_response,
+        chunks,
+    )
+
+    # Send any remaining answer text without the SOURCES line.
+    if answer.startswith(visible_answer):
+        remainder = answer[len(visible_answer):]
+
+        if remainder:
+            yield {
+                "type": "token",
+                "content": remainder,
+            }
+    else:
+        # Correct the frontend if the model's formatting
+        # made the streamed text differ from the final answer.
+        yield {
+            "type": "replace",
+            "content": answer,
+        }
+
+    # STEP 5: Send supporting citations.
+    yield {
+        "type": "citations",
+        "content": citations,
+    }
+
+    total_time = time.perf_counter() - start_time
+
+    print(
+        f"[Recall] Streaming total: {total_time:.2f}s",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
@@ -165,5 +336,6 @@ if __name__ == "__main__":
     print(result["answer"])
 
     print("\nSources:")
+
     for citation in result["citations"]:
         print(citation)

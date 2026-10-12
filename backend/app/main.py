@@ -1,29 +1,34 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from app.database import SessionLocal
-from app.models import Document
-from app.rag import answer_question
+import os
+import shutil
+import tempfile
+from fastapi.middleware.cors import CORSMiddleware
+import json
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from fastapi.responses import StreamingResponse
+from app.rag import stream_answer
+
 from app.database import SessionLocal
 from app.ingestion import ingest_document
 from app.models import Document
 from app.rag import answer_question
-
-import os
-import shutil
-import tempfile
 
 app = FastAPI(
     title="Recall API",
     description="Ask questions about indexed research papers.",
     version="1.0.0"
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 class QueryRequest(BaseModel):
-    question: str
-
+    question: str = Field(min_length=1, max_length=2000)
 
 class Citation(BaseModel):
     filename: str
@@ -153,9 +158,52 @@ def upload_document(file: UploadFile = File(...)):
 
 @app.post("/api/v1/query", response_model=QueryResponse)
 def query_recall(request: QueryRequest):
-    result = answer_question(request.question)
+
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty."
+        )
+
+    try:
+        result = answer_question(question)
+
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Recall could not generate an answer. Please try again."
+        )
 
     return QueryResponse(
         answer=result["answer"],
         citations=result["citations"]
+    )
+
+
+@app.post("/api/v1/query/stream")
+def query_recall_stream(request: QueryRequest):
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty."
+        )
+
+    def event_generator():
+        try:
+            for event in stream_answer(question):
+                yield json.dumps(event) + "\n"
+        except Exception:
+            yield json.dumps({
+                "type": "error",
+                "content": "Recall could not generate an answer."
+            }) + "\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache"}
     )
