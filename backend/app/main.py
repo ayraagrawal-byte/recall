@@ -1,34 +1,50 @@
+
+import json
 import os
 import shutil
 import tempfile
-from fastapi.middleware.cors import CORSMiddleware
-import json
+from pathlib import Path
+from app.conversations import router as conversations_router
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from fastapi.responses import StreamingResponse
-from app.rag import stream_answer
 
 from app.database import SessionLocal
 from app.ingestion import ingest_document
-from app.models import Document
-from app.rag import answer_question
+from app.models import Document, Conversation, Message, utc_now
+from app.rag import answer_question, stream_answer
+
+
+# Store uploaded PDFs outside the app source directory.
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = BACKEND_DIR / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 
 app = FastAPI(
     title="Recall API",
     description="Ask questions about indexed research papers.",
-    version="1.0.0"
+    version="1.0.0",
 )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
 )
+app.include_router(conversations_router)
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
+    conversation_id: int | None = None
+
 
 class Citation(BaseModel):
     filename: str
@@ -39,6 +55,7 @@ class QueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
 
+
 @app.get("/")
 def root():
     return {"message": "Recall API is running"}
@@ -47,6 +64,7 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
 
 @app.get("/api/v1/documents")
 def list_documents():
@@ -59,7 +77,7 @@ def list_documents():
             {
                 "id": document.id,
                 "filename": document.filename,
-                "created_at": document.created_at
+                "created_at": document.created_at,
             }
             for document in documents
         ]
@@ -67,56 +85,75 @@ def list_documents():
     finally:
         db.close()
 
+
 @app.post("/api/v1/documents/upload")
 def upload_document(file: UploadFile = File(...)):
-    # Make sure the uploaded file has a filename.
     if not file.filename:
         raise HTTPException(
             status_code=400,
-            detail="A filename is required."
+            detail="A filename is required.",
         )
 
-    # Only allow PDF files.
-    if not file.filename.lower().endswith(".pdf"):
+    original_filename = Path(
+        file.filename.replace("\\", "/")
+    ).name
+
+    if not original_filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400,
-            detail="Only PDF files are supported."
+            detail="Only PDF files are supported.",
         )
 
-    # Check whether a document with this filename already exists.
+    # Check for an existing document.
     db = SessionLocal()
 
     try:
         existing_document = (
             db.query(Document)
-            .filter(Document.filename == file.filename)
+            .filter(Document.filename == original_filename)
             .first()
         )
+
     finally:
         db.close()
 
     if existing_document:
         raise HTTPException(
             status_code=409,
-            detail=f"A document named '{file.filename}' is already indexed."
+            detail=(
+                f"A document named '{original_filename}' "
+                "is already indexed."
+            ),
         )
 
     temp_path = None
+    document_id = None
 
     try:
-        # Save the uploaded PDF temporarily.
+        # Save the incoming PDF temporarily for ingestion.
         with tempfile.NamedTemporaryFile(
             delete=False,
-            suffix=".pdf"
+            suffix=".pdf",
         ) as temp_file:
             shutil.copyfileobj(file.file, temp_file)
             temp_path = temp_file.name
 
-        # Extract, chunk, embed, and store the document.
+        # Confirm the file is actually a PDF.
+        with open(temp_path, "rb") as pdf_file:
+            if pdf_file.read(5) != b"%PDF-":
+                raise HTTPException(
+                    status_code=400,
+                    detail="The uploaded file is not a valid PDF.",
+                )
+
+        # Preserve the existing ingestion pipeline.
         document_id = ingest_document(temp_path)
 
-        # ingest_document() sees the temporary filename,
-        # so replace it with the user's original filename.
+        # Store the original PDF using its database ID.
+        permanent_path = UPLOAD_DIR / f"{document_id}.pdf"
+        shutil.copy2(temp_path, permanent_path)
+
+        # Replace the temporary filename in the database.
         db = SessionLocal()
 
         try:
@@ -127,7 +164,7 @@ def upload_document(file: UploadFile = File(...)):
                     "Document was not found after ingestion."
                 )
 
-            document.filename = file.filename
+            document.filename = original_filename
             db.commit()
 
         finally:
@@ -135,36 +172,79 @@ def upload_document(file: UploadFile = File(...)):
 
         return {
             "id": document_id,
-            "filename": file.filename,
-            "status": "indexed"
+            "filename": original_filename,
+            "status": "indexed",
         }
 
     except HTTPException:
         raise
 
-    except Exception as error:
+    except Exception:
+        # Remove an orphaned stored file if an error occurred.
+        if document_id is not None:
+            stored_path = UPLOAD_DIR / f"{document_id}.pdf"
+
+            if stored_path.exists():
+                stored_path.unlink()
+
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to process PDF: {error}"
+            detail="Failed to process PDF.",
         )
 
     finally:
         file.file.close()
 
-        # Always remove the temporary PDF.
         if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)     
+            os.remove(temp_path)
+
+
+@app.get("/api/v1/documents/{document_id}/pdf")
+def view_document_pdf(document_id: int):
+    db = SessionLocal()
+
+    try:
+        document = db.get(Document, document_id)
+
+        if document is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found.",
+            )
+
+        filename = document.filename
+
+    finally:
+        db.close()
+
+    pdf_path = UPLOAD_DIR / f"{document_id}.pdf"
+
+    if not pdf_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "The original PDF is not available for "
+                "this document. It may have been indexed "
+                "before permanent PDF storage was enabled."
+            ),
+        )
+
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",
+    )
 
 
 @app.post("/api/v1/query", response_model=QueryResponse)
 def query_recall(request: QueryRequest):
-
     question = request.question.strip()
 
     if not question:
         raise HTTPException(
             status_code=400,
-            detail="Question cannot be empty."
+            detail="Question cannot be empty.",
         )
 
     try:
@@ -173,13 +253,17 @@ def query_recall(request: QueryRequest):
     except Exception:
         raise HTTPException(
             status_code=503,
-            detail="Recall could not generate an answer. Please try again."
+            detail=(
+                "Recall could not generate an answer. "
+                "Please try again."
+            ),
         )
 
     return QueryResponse(
         answer=result["answer"],
-        citations=result["citations"]
+        citations=result["citations"],
     )
+
 
 
 @app.post("/api/v1/query/stream")
@@ -189,21 +273,109 @@ def query_recall_stream(request: QueryRequest):
     if not question:
         raise HTTPException(
             status_code=400,
-            detail="Question cannot be empty."
+            detail="Question cannot be empty.",
         )
 
+    # Validate the conversation before starting the stream.
+    if request.conversation_id is not None:
+        with SessionLocal() as db:
+            conversation = db.get(
+                Conversation,
+                request.conversation_id,
+            )
+
+            if conversation is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Conversation not found.",
+                )
+
     def event_generator():
+        answer_parts = []
+        citations = []
+        completed = False
+
         try:
             for event in stream_answer(question):
+                event_type = event.get("type")
+                content = event.get("content")
+
+                if event_type == "token":
+                    answer_parts.append(content)
+
+                elif event_type == "replace":
+                    answer_parts = [content]
+
+                elif event_type == "citations":
+                    citations = content
+                    completed = True
+
                 yield json.dumps(event) + "\n"
+
+            # Save only after generation completes successfully.
+            if completed:
+                final_answer = "".join(answer_parts).strip()
+
+                if final_answer:
+                    with SessionLocal() as db:
+                        if request.conversation_id is None:
+                            conversation = Conversation(
+                                title=question[:255],
+                            )
+                            db.add(conversation)
+                            db.flush()
+                        else:
+                            conversation = db.get(
+                                Conversation,
+                                request.conversation_id,
+                            )
+
+                            if conversation is None:
+                                raise RuntimeError(
+                                    "Conversation no longer exists."
+                                )
+
+                            if conversation.title == "New conversation":
+                                conversation.title = question[:255]
+
+                        db.add_all([
+                            Message(
+                                conversation_id=conversation.id,
+                                role="user",
+                                content=question,
+                                citations=[],
+                            ),
+                            Message(
+                                conversation_id=conversation.id,
+                                role="assistant",
+                                content=final_answer,
+                                citations=citations,
+                            ),
+                        ])
+
+                        conversation.updated_at = utc_now()
+                        db.commit()
+                        conversation_id = conversation.id
+
+                    yield json.dumps({
+                        "type": "saved",
+                        "conversation_id": conversation_id,
+                    }) + "\n"
+
         except Exception:
             yield json.dumps({
                 "type": "error",
-                "content": "Recall could not generate an answer."
+                "content": (
+                    "Recall could not complete or save this answer. "
+                    "Please try again."
+                ),
             }) + "\n"
 
     return StreamingResponse(
         event_generator(),
         media_type="application/x-ndjson",
-        headers={"Cache-Control": "no-cache"}
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Content-Type-Options": "nosniff",
+        },
     )

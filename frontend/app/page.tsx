@@ -15,62 +15,256 @@ type Citation = {
   page: number | null;
 };
 
-type QueryResult = {
-  answer: string;
+type Message = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  citations: Citation[];
+  created_at: string;
+};
+
+type Conversation = {
+  id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type ConversationDetail = Conversation & {
+  messages: Message[];
+};
+
+type ChatItem = {
+  key: string;
+  role: "user" | "assistant";
+  content: string;
   citations: Citation[];
 };
 
-const API_URL = "http://127.0.0.1:8000";
+type StreamEvent =
+  | { type: "token"; content: string }
+  | { type: "replace"; content: string }
+  | { type: "citations"; content: Citation[] }
+  | { type: "saved"; conversation_id: number }
+  | { type: "error"; content: string };
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
 
 export default function Home() {
-  // Document library
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsError, setDocumentsError] = useState("");
   const [loadingDocuments, setLoadingDocuments] = useState(true);
 
-  // Question answering
+  const [conversations, setConversations] = useState<
+    Conversation[]
+  >([]);
+  const [activeConversationId, setActiveConversationId] =
+    useState<number | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+
+  const [messages, setMessages] = useState<ChatItem[]>([]);
   const [question, setQuestion] = useState("");
-  const [result, setResult] = useState<QueryResult | null>(null);
   const [asking, setAsking] = useState(false);
   const [queryError, setQueryError] = useState("");
 
-  // PDF uploading
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] =
+    useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const activeIdRef = useRef<number | null>(null);
+  const requestIdRef = useRef(0);
 
-  // Load indexed documents when the dashboard opens.
   useEffect(() => {
-    async function loadDocuments() {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/v1/documents`
-        );
+    activeIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
-        if (!response.ok) {
-          throw new Error("Failed to load documents.");
-        }
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [messages]);
 
-        const data: Document[] = await response.json();
+  async function loadDocuments() {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/documents`
+      );
 
-        setDocuments(data);
-        setDocumentsError("");
-      } catch {
-        setDocumentsError(
-          "Could not load documents. Check that FastAPI is running."
-        );
-      } finally {
-        setLoadingDocuments(false);
+      if (!response.ok) {
+        throw new Error("Failed to load documents.");
+      }
+
+      const data: Document[] = await response.json();
+      setDocuments(data);
+      setDocumentsError("");
+    } catch {
+      setDocumentsError(
+        "Could not load documents. Check that FastAPI is running."
+      );
+    } finally {
+      setLoadingDocuments(false);
+    }
+  }
+
+  async function loadConversations() {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/conversations`,
+        { cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load conversations.");
+      }
+
+      const data: Conversation[] = await response.json();
+      setConversations(data);
+      setHistoryError("");
+      return data;
+    } catch {
+      setHistoryError(
+        "Could not load chat history. Check that FastAPI is running."
+      );
+      return null;
+    } finally {
+      setLoadingHistory(false);
+    }
+  }
+
+  async function openConversation(
+    conversationId: number
+  ) {
+    if (asking) return;
+
+    const requestId = ++requestIdRef.current;
+
+    setActiveConversationId(conversationId);
+    activeIdRef.current = conversationId;
+    setMessages([]);
+    setQuestion("");
+    setQueryError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/conversations/${conversationId}`,
+        { cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not open conversation.");
+      }
+
+      const data: ConversationDetail =
+        await response.json();
+
+      if (requestId !== requestIdRef.current) return;
+
+      setMessages(
+        data.messages.map((message) => ({
+          key: `saved-${message.id}`,
+          role: message.role,
+          content: message.content,
+          citations: message.citations ?? [],
+        }))
+      );
+    } catch {
+      if (requestId === requestIdRef.current) {
+        setQueryError("Could not load this conversation.");
+      }
+    }
+  }
+
+  useEffect(() => {
+    async function initialize() {
+      await loadDocuments();
+
+      const chats = await loadConversations();
+
+      if (!chats) return;
+
+      const savedId = window.localStorage.getItem(
+        "recall-active-conversation"
+      );
+
+      const preferredId = savedId
+        ? Number(savedId)
+        : null;
+
+      const selected =
+        chats.find(
+          (chat) => chat.id === preferredId
+        ) ?? null;
+
+      if (selected) {
+        await openConversation(selected.id);
       }
     }
 
-    loadDocuments();
+    initialize();
+    // Initial loading only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Upload a PDF and refresh the document library.
+  function handleNewChat() {
+    if (asking) return;
+
+    requestIdRef.current += 1;
+    activeIdRef.current = null;
+    setActiveConversationId(null);
+    setMessages([]);
+    setQuestion("");
+    setQueryError("");
+
+    window.localStorage.removeItem(
+      "recall-active-conversation"
+    );
+  }
+
+  async function handleDeleteChat(
+    conversationId: number
+  ) {
+    if (asking) return;
+
+    const confirmed = window.confirm(
+      "Delete this conversation and all its messages?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/conversations/${conversationId}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not delete conversation.");
+      }
+
+      setConversations((previous) =>
+        previous.filter(
+          (chat) => chat.id !== conversationId
+        )
+      );
+
+      if (activeIdRef.current === conversationId) {
+        handleNewChat();
+      }
+    } catch {
+      setHistoryError(
+        "Could not delete the conversation."
+      );
+    }
+  }
+
   async function handleUpload() {
     if (!selectedFile || uploading) return;
 
@@ -79,7 +273,11 @@ export default function Home() {
     setUploadSuccess("");
 
     try {
-      if (!selectedFile.name.toLowerCase().endsWith(".pdf")) {
+      if (
+        !selectedFile.name
+          .toLowerCase()
+          .endsWith(".pdf")
+      ) {
         throw new Error("Please select a PDF file.");
       }
 
@@ -97,12 +295,11 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
-        const message =
+        throw new Error(
           typeof data.detail === "string"
             ? data.detail
-            : "Upload failed.";
-
-        throw new Error(message);
+            : "Upload failed."
+        );
       }
 
       setUploadSuccess(
@@ -111,31 +308,11 @@ export default function Home() {
 
       setSelectedFile(null);
 
-      // Clear the native file input.
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
 
-      // Refresh the document library.
-      try {
-        const documentsResponse = await fetch(
-          `${API_URL}/api/v1/documents`
-        );
-
-        if (!documentsResponse.ok) {
-          throw new Error("Failed to refresh documents.");
-        }
-
-        const updatedDocuments: Document[] =
-          await documentsResponse.json();
-
-        setDocuments(updatedDocuments);
-        setDocumentsError("");
-      } catch {
-        setDocumentsError(
-          "The upload succeeded, but the document library could not refresh. Reload the page to try again."
-        );
-      }
+      await loadDocuments();
     } catch (error) {
       setUploadError(
         error instanceof Error
@@ -147,146 +324,264 @@ export default function Home() {
     }
   }
 
-  // Ask a question using Recall's RAG pipeline.
- 
-async function handleAsk(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
+  async function handleAsk(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
-  const trimmedQuestion = question.trim();
+    const trimmedQuestion = question.trim();
 
-  if (!trimmedQuestion || asking) return;
+    if (!trimmedQuestion || asking) return;
 
-  setAsking(true);
-  setQueryError("");
-  setResult({
-    answer: "",
-    citations: [],
-  });
+    const conversationId = activeIdRef.current;
+    const userKey = `pending-user-${Date.now()}`;
+    const assistantKey = `pending-assistant-${Date.now()}`;
 
-  try {
-    const response = await fetch(
-      `${API_URL}/api/v1/query/stream`,
+    setAsking(true);
+    setQueryError("");
+    setQuestion("");
+
+    setMessages((previous) => [
+      ...previous,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          question: trimmedQuestion,
-        }),
-      }
-    );
+        key: userKey,
+        role: "user",
+        content: trimmedQuestion,
+        citations: [],
+      },
+      {
+        key: assistantKey,
+        role: "assistant",
+        content: "",
+        citations: [],
+      },
+    ]);
 
-    if (!response.ok) {
-      throw new Error(
-        "Recall could not answer your question."
+    let savedConversationId: number | null = null;
+    let streamError = false;
+
+    function updateAssistant(
+      updater: (message: ChatItem) => ChatItem
+    ) {
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.key === assistantKey
+            ? updater(message)
+            : message
+        )
       );
     }
 
-    if (!response.body) {
-      throw new Error("Streaming is not supported.");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      const lines = buffer.split("\n");
-
-      buffer = lines.pop() ?? "";
-
-      for (const line of lines) {
-        if (!line.trim()) continue;
-
-        const event = JSON.parse(line);
-
-        if (event.type === "token") {
-          setResult((previous) => ({
-            answer: (previous?.answer ?? "") + event.content,
-            citations: previous?.citations ?? [],
-          }));
-        }
-
-        if (event.type === "replace") {
-          setResult((previous) => ({
-            answer: event.content,
-            citations: previous?.citations ?? [],
-          }));
-        }
-
-        if (event.type === "citations") {
-          setResult((previous) => ({
-            answer: previous?.answer ?? "",
-            citations: event.content,
-          }));
-        }
-
-        if (event.type === "error") {
-          throw new Error(event.content);
-        }
-      }
-    }
-
-    buffer += decoder.decode();
-
-    if (buffer.trim()) {
-      const event = JSON.parse(buffer);
-
-      if (event.type === "error") {
-        throw new Error(event.content);
-      }
-
+    function processEvent(event: StreamEvent) {
       if (event.type === "token") {
-        setResult((previous) => ({
-          answer: (previous?.answer ?? "") + event.content,
-          citations: previous?.citations ?? [],
+        updateAssistant((message) => ({
+          ...message,
+          content: message.content + event.content,
         }));
       }
 
       if (event.type === "replace") {
-        setResult((previous) => ({
-          answer: event.content,
-          citations: previous?.citations ?? [],
+        updateAssistant((message) => ({
+          ...message,
+          content: event.content,
         }));
       }
 
       if (event.type === "citations") {
-        setResult((previous) => ({
-          answer: previous?.answer ?? "",
+        updateAssistant((message) => ({
+          ...message,
           citations: event.content,
         }));
       }
-    }
-  } catch (error) {
-    setQueryError(
-      error instanceof Error
-        ? error.message
-        : "Something went wrong."
-    );
-  } finally {
-    setAsking(false);
-  }
-}
 
+      if (event.type === "saved") {
+        savedConversationId = event.conversation_id;
+      }
+
+      if (event.type === "error") {
+        streamError = true;
+        throw new Error(event.content);
+      }
+    }
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/query/stream`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            question: trimmedQuestion,
+            conversation_id: conversationId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Recall could not answer your question."
+        );
+      }
+
+      if (!response.body) {
+        throw new Error(
+          "Streaming is not supported."
+        );
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, {
+          stream: true,
+        });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          processEvent(
+            JSON.parse(line) as StreamEvent
+          );
+        }
+      }
+
+      buffer += decoder.decode();
+
+      if (buffer.trim()) {
+        processEvent(
+          JSON.parse(buffer) as StreamEvent
+        );
+      }
+
+      if (savedConversationId === null) {
+        throw new Error(
+          "The answer was generated but its save was not confirmed."
+        );
+      }
+
+      const confirmedId: number =
+        savedConversationId;
+
+      activeIdRef.current = confirmedId;
+      setActiveConversationId(confirmedId);
+
+      window.localStorage.setItem(
+        "recall-active-conversation",
+        String(confirmedId)
+      );
+
+      await loadConversations();
+    } catch (error) {
+      setQueryError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong."
+      );
+
+      if (savedConversationId === null) {
+        updateAssistant((message) => ({
+          ...message,
+          content:
+            message.content ||
+            "The answer could not be completed.",
+        }));
+      }
+
+      if (streamError) {
+        console.error(
+          "Recall streaming error."
+        );
+      }
+    } finally {
+      setAsking(false);
+    }
+  }
+
+  function renderCitations(
+    citations: Citation[]
+  ) {
+    if (citations.length === 0) return null;
+
+    return (
+      <div className="mt-4">
+        <h5 className="text-sm font-semibold text-slate-700">
+          Sources
+        </h5>
+
+        <ul className="mt-2 space-y-2">
+          {citations.map((citation, index) => {
+            const document = documents.find(
+              (doc) =>
+                doc.filename === citation.filename
+            );
+
+            const pdfUrl = document
+              ? `${API_URL}/api/v1/documents/${document.id}/pdf${
+                  citation.page !== null
+                    ? `#page=${citation.page}`
+                    : ""
+                }`
+              : null;
+
+            return (
+              <li
+                key={`${citation.filename}-${citation.page}-${index}`}
+              >
+                {pdfUrl ? (
+                  <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-800 transition-colors hover:bg-indigo-100"
+                  >
+                    <span className="break-all">
+                      {citation.filename}
+                      {citation.page !== null
+                        ? ` — Page ${citation.page}`
+                        : ""}
+                    </span>
+
+                    <span className="ml-3">
+                      ↗
+                    </span>
+                  </a>
+                ) : (
+                  <div className="rounded-lg bg-slate-100 px-4 py-3 text-sm text-slate-500">
+                    {citation.filename}
+                    {citation.page !== null
+                      ? ` — Page ${citation.page}`
+                      : ""}
+                    {" (document unavailable)"}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* HEADER */}
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
               Recall.
             </h1>
-
             <p className="text-sm text-slate-500">
               Your research, remembered.
             </p>
@@ -298,196 +593,162 @@ async function handleAsk(event: FormEvent<HTMLFormElement>) {
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
-      <main className="mx-auto max-w-6xl space-y-8 px-6 py-10">
-        <section>
-          <h2 className="text-3xl font-semibold tracking-tight">
-            Your research workspace
-          </h2>
-
-          <p className="mt-2 text-slate-500">
-            Upload research papers, ask questions, and find answers
-            grounded in your documents.
-          </p>
-        </section>
-
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* LEFT SIDEBAR */}
-          <section className="space-y-6 lg:col-span-1">
-            {/* PDF UPLOAD */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">
-                Upload a paper
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Add a PDF to your research library.
-              </p>
-
-              <label className="mt-5 flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center hover:border-indigo-300">
-                <span className="text-3xl">↑</span>
-
-                <span className="mt-2 text-sm font-medium">
-                  Choose a PDF
-                </span>
-
-                <span className="mt-1 max-w-full break-all text-xs text-slate-500">
-                  {selectedFile?.name ?? "PDF files only"}
-                </span>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  disabled={uploading}
-                  className="hidden"
-                  onChange={(event) => {
-                    setSelectedFile(
-                      event.target.files?.[0] ?? null
-                    );
-                    setUploadError("");
-                    setUploadSuccess("");
-                  }}
-                />
-              </label>
-
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* CHAT HISTORY SIDEBAR */}
+          <aside className="lg:col-span-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <button
                 type="button"
-                onClick={handleUpload}
-                disabled={!selectedFile || uploading}
-                className="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={handleNewChat}
+                disabled={asking}
+                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                {uploading
-                  ? "Processing PDF..."
-                  : "Upload document"}
+                + New chat
               </button>
 
-              {uploading && (
-                <p
-                  role="status"
-                  className="mt-3 text-sm text-slate-500"
-                >
-                  Extracting text, generating embeddings,
-                  and indexing your paper. This may take a while.
-                </p>
-              )}
-
-              {uploadError && (
-                <p
-                  role="alert"
-                  className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600"
-                >
-                  {uploadError}
-                </p>
-              )}
-
-              {uploadSuccess && (
-                <p
-                  role="status"
-                  className="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-700"
-                >
-                  {uploadSuccess}
-                </p>
-              )}
-            </div>
-
-            {/* DOCUMENT LIBRARY */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  Your documents
-                </h3>
-
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
-                  {documents.length}
+              <div className="mt-6 flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Recent chats
+                </h2>
+                <span className="text-xs text-slate-400">
+                  {conversations.length}
                 </span>
               </div>
 
-              {documentsError && (
-                <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  {documentsError}
+              {historyError && (
+                <p className="mt-3 text-xs text-red-600">
+                  {historyError}
                 </p>
               )}
 
-              {loadingDocuments ? (
-                <p className="mt-5 text-sm text-slate-500">
-                  Loading documents...
+              {loadingHistory ? (
+                <p className="mt-4 text-sm text-slate-500">
+                  Loading chats...
                 </p>
-              ) : documents.length === 0 ? (
-                <p className="mt-5 text-sm text-slate-500">
-                  Your indexed papers will appear here.
+              ) : conversations.length === 0 ? (
+                <p className="mt-4 text-sm text-slate-500">
+                  Your saved conversations will appear here.
                 </p>
               ) : (
-                <ul className="mt-4 space-y-3">
-                  {documents.map((document) => (
-                    <li
-                      key={document.id}
-                      className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3"
-                    >
-                      <span className="text-lg">📄</span>
+                <ul className="mt-4 max-h-[450px] space-y-2 overflow-y-auto">
+                  {conversations.map(
+                    (conversation) => (
+                      <li
+                        key={conversation.id}
+                        className={`flex items-center gap-2 rounded-xl p-2 ${
+                          activeConversationId ===
+                          conversation.id
+                            ? "bg-indigo-50"
+                            : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          disabled={asking}
+                          onClick={() => {
+                            window.localStorage.setItem(
+                              "recall-active-conversation",
+                              String(conversation.id)
+                            );
 
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-medium text-slate-800">
-                          {document.filename}
-                        </p>
+                            openConversation(
+                              conversation.id
+                            );
+                          }}
+                          className="min-w-0 flex-1 truncate text-left text-sm text-slate-700 disabled:opacity-50"
+                          title={conversation.title}
+                        >
+                          {conversation.title}
+                        </button>
 
-                        <p className="mt-1 text-xs text-slate-400">
-                          Indexed document
-                        </p>
-                      </div>
-                    </li>
-                  ))}
+                        <button
+                          type="button"
+                          disabled={asking}
+                          onClick={() =>
+                            handleDeleteChat(
+                              conversation.id
+                            )
+                          }
+                          className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          aria-label={`Delete ${conversation.title}`}
+                          title="Delete conversation"
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    )
+                  )}
                 </ul>
               )}
             </div>
-          </section>
+          </aside>
 
-          {/* QUESTION AREA */}
-          <section className="lg:col-span-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-              <h3 className="text-xl font-semibold">
-                Ask Recall
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Get answers supported by your research papers.
-              </p>
-
-              <form
-                className="mt-6 space-y-4"
-                onSubmit={handleAsk}
-              >
-                <textarea
-                  value={question}
-                  onChange={(event) => {
-                    setQuestion(event.target.value);
-                  }}
-                  placeholder="What did the researchers find?"
-                  rows={4}
-                  maxLength={2000}
-                  disabled={asking}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-white p-4 text-sm outline-none transition-colors focus:border-indigo-500 disabled:opacity-60"
-                />
-
-                <button
-                  type="submit"
-                  disabled={!question.trim() || asking}
-                  className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {asking
-                    ? "Searching your research..."
-                    : "Ask question →"}
-                </button>
-              </form>
-
-              {asking && (
-                <p
-                  role="status"
-                  className="mt-4 text-sm text-slate-500"
-                >
-                  Retrieving relevant passages and generating your answer...
+          {/* MAIN CHAT AREA */}
+          <section className="lg:col-span-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="border-b border-slate-100 pb-4">
+                <h2 className="text-xl font-semibold">
+                  Ask Recall
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Ask questions grounded in your research papers.
                 </p>
-              )}
+              </div>
+
+              <div
+                className="mt-5 min-h-[300px] max-h-[550px] space-y-5 overflow-y-auto pr-1"
+                aria-live="polite"
+              >
+                {messages.length === 0 ? (
+                  <div className="flex min-h-[250px] flex-col items-center justify-center text-center">
+                    <div className="mb-3 text-3xl">
+                      ✦
+                    </div>
+                    <h3 className="text-lg font-semibold">
+                      What would you like to research?
+                    </h3>
+                    <p className="mt-2 max-w-xs text-sm text-slate-500">
+                      Ask a question about your uploaded PDFs.
+                      Your answers and citations will be saved here.
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.key}
+                      className={
+                        message.role === "user"
+                          ? "flex justify-end"
+                          : "flex justify-start"
+                      }
+                    >
+                      <div
+                        className={`max-w-full rounded-2xl px-4 py-3 ${
+                          message.role === "user"
+                            ? "bg-indigo-600 text-white"
+                            : "w-full bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words text-sm leading-7">
+                          {message.content ||
+                            (asking
+                              ? "Generating answer..."
+                              : "")}
+                        </p>
+
+                        {message.role ===
+                          "assistant" &&
+                          renderCitations(
+                            message.citations
+                          )}
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                <div ref={bottomRef} />
+              </div>
 
               {queryError && (
                 <p
@@ -498,56 +759,161 @@ async function handleAsk(event: FormEvent<HTMLFormElement>) {
                 </p>
               )}
 
-              {/* ANSWER */}
-              <div
-                className="mt-8 border-t border-slate-100 pt-6"
-                aria-live="polite"
+              <form
+                onSubmit={handleAsk}
+                className="mt-5 border-t border-slate-100 pt-5"
               >
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                  Answer
-                </h4>
+                <textarea
+                  value={question}
+                  onChange={(event) =>
+                    setQuestion(event.target.value)
+                  }
+                  placeholder="Ask about your research..."
+                  rows={3}
+                  maxLength={2000}
+                  disabled={asking}
+                  className="w-full resize-none rounded-xl border border-slate-200 p-4 text-sm outline-none focus:border-indigo-500 disabled:opacity-60"
+                />
 
-                {result ? (
-                  <div className="mt-4 space-y-5">
-                    <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                      {result.answer}
-                    </p>
-
-                    {result.citations.length > 0 && (
-                      <div>
-                        <h5 className="text-sm font-semibold">
-                          Sources
-                        </h5>
-
-                        <ul className="mt-2 space-y-2">
-                          {result.citations.map(
-                            (citation, index) => (
-                              <li
-                                key={`${citation.filename}-${citation.page}-${index}`}
-                                className="rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-800"
-                              >
-                                {citation.filename}
-
-                                {citation.page !== null
-                                  ? ` — Page ${citation.page}`
-                                  : ""}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-slate-500">
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">
                     {asking
-                      ? "Preparing your answer..."
-                      : "Your answer and supporting citations will appear here."}
-                  </p>
-                )}
-              </div>
+                      ? "Searching and generating..."
+                      : "Answers are grounded in your PDFs"}
+                  </span>
+
+                  <button
+                    type="submit"
+                    disabled={
+                      asking || !question.trim()
+                    }
+                    className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {asking
+                      ? "Thinking..."
+                      : "Ask Recall →"}
+                  </button>
+                </div>
+              </form>
             </div>
           </section>
+
+          {/* DOCUMENT LIBRARY */}
+          <aside className="space-y-6 lg:col-span-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-semibold">
+                Upload a paper
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Add a PDF to your research library.
+              </p>
+
+              <label className="mt-5 flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-7 text-center hover:border-indigo-300">
+                <span className="text-2xl">
+                  ↑
+                </span>
+                <span className="mt-2 text-sm font-medium">
+                  Choose a PDF
+                </span>
+                <span className="mt-1 max-w-full break-all text-xs text-slate-500">
+                  {selectedFile?.name ??
+                    "PDF files only"}
+                </span>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  disabled={uploading}
+                  className="hidden"
+                  onChange={(event) => {
+                    setSelectedFile(
+                      event.target.files?.[0] ??
+                        null
+                    );
+                    setUploadError("");
+                    setUploadSuccess("");
+                  }}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={
+                  !selectedFile || uploading
+                }
+                className="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {uploading
+                  ? "Processing PDF..."
+                  : "Upload document"}
+              </button>
+
+              {uploading && (
+                <p className="mt-3 text-sm text-slate-500">
+                  Extracting text, generating embeddings,
+                  and indexing your paper...
+                </p>
+              )}
+
+              {uploadError && (
+                <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                  {uploadError}
+                </p>
+              )}
+
+              {uploadSuccess && (
+                <p className="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+                  {uploadSuccess}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  Your documents
+                </h2>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+                  {documents.length}
+                </span>
+              </div>
+
+              {documentsError && (
+                <p className="mt-4 text-sm text-red-600">
+                  {documentsError}
+                </p>
+              )}
+
+              {loadingDocuments ? (
+                <p className="mt-4 text-sm text-slate-500">
+                  Loading documents...
+                </p>
+              ) : documents.length === 0 ? (
+                <p className="mt-4 text-sm text-slate-500">
+                  No documents uploaded yet.
+                </p>
+              ) : (
+                <ul className="mt-4 max-h-[450px] space-y-2 overflow-y-auto">
+                  {documents.map((document) => (
+                    <li
+                      key={document.id}
+                      className="rounded-lg bg-slate-50 p-3"
+                    >
+                      <p className="break-all text-sm font-medium text-slate-700">
+                        {document.filename}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Indexed document
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </aside>
         </div>
       </main>
     </div>
