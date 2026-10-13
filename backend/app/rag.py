@@ -19,6 +19,7 @@ def build_citations(chunks):
         citation = {
             "filename": chunk["filename"],
             "page": chunk["page_number"],
+            "evidence": chunk["content"],
         }
 
         if citation not in citations:
@@ -60,6 +61,7 @@ def parse_response(response_text, chunks):
                 citation = {
                     "filename": chunk["filename"],
                     "page": chunk["page_number"],
+                    "evidence": chunk["content"],
                 }
 
                 if citation not in citations:

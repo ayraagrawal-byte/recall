@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "next": "16.4.0",
+    "pdfjs-dist": "6.3.289",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-pdf": "^11.0.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

@@ -4,14 +4,14 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from app.conversations import router as conversations_router
-from app.conversation_memory import prepare_retrieval_question
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.conversations import router as conversations_router
+from app.conversation_memory import prepare_retrieval_question
 from app.database import SessionLocal
 from app.ingestion import ingest_document
 from app.models import Document, Conversation, Message, utc_now
@@ -40,7 +40,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
 )
+
 app.include_router(conversations_router)
+
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
@@ -50,6 +52,7 @@ class QueryRequest(BaseModel):
 class Citation(BaseModel):
     filename: str
     page: int | None
+    evidence: str | None = None
 
 
 class QueryResponse(BaseModel):
@@ -238,7 +241,11 @@ def view_document_pdf(document_id: int):
     )
 
 
-@app.post("/api/v1/query", response_model=QueryResponse)
+@app.post(
+    "/api/v1/query",
+    response_model=QueryResponse,
+    response_model_exclude_none=True,
+)
 def query_recall(request: QueryRequest):
     question = request.question.strip()
 
@@ -264,7 +271,6 @@ def query_recall(request: QueryRequest):
         answer=result["answer"],
         citations=result["citations"],
     )
-
 
 
 @app.post("/api/v1/query/stream")
@@ -319,6 +325,7 @@ def query_recall_stream(request: QueryRequest):
                     completed = True
 
                 yield json.dumps(event) + "\n"
+
             # Save only after generation completes successfully.
             if completed:
                 final_answer = "".join(answer_parts).strip()
