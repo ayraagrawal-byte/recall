@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import SessionLocal
-from app.models import Conversation, Message
+from app.models import Conversation, Message, utc_now
 
 
 router = APIRouter(
@@ -125,6 +125,26 @@ def save_exchange(
                 detail="Conversation not found.",
             )
 
+        # Check for existing messages BEFORE adding
+        # the new exchange to the session.
+        #
+        # This prevents SQLAlchemy's autoflush from
+        # making the new messages appear in the query.
+        existing_message = db.scalar(
+            select(Message.id)
+            .where(
+                Message.conversation_id == conversation_id
+            )
+            .limit(1)
+        )
+
+        # Use the first question as the conversation title.
+        if (
+            conversation.title == "New conversation"
+            and existing_message is None
+        ):
+            conversation.title = question[:255]
+
         user_message = Message(
             conversation_id=conversation_id,
             role="user",
@@ -144,24 +164,7 @@ def save_exchange(
             assistant_message,
         ])
 
-        # Use the first question as the conversation title.
-        existing_messages = db.scalar(
-            select(Message.id)
-            .where(
-                Message.conversation_id == conversation_id,
-                Message.id != user_message.id,
-            )
-            .limit(1)
-        )
-
-        if (
-            conversation.title == "New conversation"
-            and existing_messages is None
-        ):
-            conversation.title = question[:255]
-
-        # Ensure the conversation moves to the top of the list.
-        from app.models import utc_now
+        # Move this conversation to the top of the list.
         conversation.updated_at = utc_now()
 
         db.commit()

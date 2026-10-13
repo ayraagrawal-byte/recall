@@ -68,3 +68,7 @@ Desktop.ini
 
 # Pytest
 .pytest_cache/
+
+# Uploaded research PDFs
+backend/uploads/backend/uploads/
+backend/uploads/

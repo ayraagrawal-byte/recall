@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from app.conversations import router as conversations_router
+from app.conversation_memory import prepare_retrieval_question
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -296,7 +297,14 @@ def query_recall_stream(request: QueryRequest):
         completed = False
 
         try:
-            for event in stream_answer(question):
+            # Rewrite follow-up questions using saved history.
+            retrieval_question = prepare_retrieval_question(
+                question,
+                request.conversation_id,
+            )
+
+            # Use the existing RAG pipeline.
+            for event in stream_answer(retrieval_question):
                 event_type = event.get("type")
                 content = event.get("content")
 
@@ -311,7 +319,6 @@ def query_recall_stream(request: QueryRequest):
                     completed = True
 
                 yield json.dumps(event) + "\n"
-
             # Save only after generation completes successfully.
             if completed:
                 final_answer = "".join(answer_parts).strip()
