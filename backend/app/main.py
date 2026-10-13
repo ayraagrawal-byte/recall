@@ -3,7 +3,9 @@ import json
 import os
 import shutil
 import tempfile
+import requests
 from pathlib import Path
+from app.comparison import compare_papers
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -59,6 +61,19 @@ class QueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
 
+class CompareRequest(BaseModel):
+    document_ids: list[int] = Field(min_length=2, max_length=2)
+
+
+class ComparisonSection(BaseModel):
+    answer: str
+    citations: list[Citation]
+
+
+class CompareResponse(BaseModel):
+    paper_a: dict
+    paper_b: dict
+    sections: dict[str, ComparisonSection]
 
 @app.get("/")
 def root():
@@ -393,3 +408,49 @@ def query_recall_stream(request: QueryRequest):
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+@app.post(
+    "/api/v1/compare",
+    response_model=CompareResponse,
+)
+def compare_documents(request: CompareRequest):
+    first_id, second_id = request.document_ids
+
+    if first_id == second_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Select two different papers.",
+        )
+
+    with SessionLocal() as db:
+        first = db.get(Document, first_id)
+        second = db.get(Document, second_id)
+
+        if first is None or second is None:
+            raise HTTPException(
+                status_code=404,
+                detail="One or both papers were not found.",
+            )
+
+        paper_a = {
+            "id": first.id,
+            "filename": first.filename,
+        }
+
+        paper_b = {
+            "id": second.id,
+            "filename": second.filename,
+        }
+
+    try:
+        return compare_papers(paper_a, paper_b)
+
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The local Ollama model is unavailable "
+                "or the comparison timed out."
+            ),
+        )
