@@ -1,4 +1,5 @@
 "use client";
+import { RECALL_API, recallFetch } from "../lib/recallDemo";
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -24,8 +25,7 @@ type Props = {
   onOpenPdf: (paper: Paper, page: number | null) => void;
 };
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API = RECALL_API;
 
 export default function SavedBookmarks({
   papers,
@@ -48,7 +48,7 @@ export default function SavedBookmarks({
     setError("");
 
     try {
-      const response = await fetch(`${API}/api/v1/bookmarks`, {
+      const response = await recallFetch(`${API}/api/v1/bookmarks`, {
         cache: "no-store",
       });
 
@@ -94,7 +94,7 @@ export default function SavedBookmarks({
     setSuccess("");
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/bookmarks/${bookmark.id}`,
         {
           method: "PATCH",
@@ -135,7 +135,7 @@ export default function SavedBookmarks({
     setSuccess("");
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/bookmarks/${bookmark.id}`,
         { method: "DELETE" }
       );

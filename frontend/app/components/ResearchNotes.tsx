@@ -1,4 +1,5 @@
 "use client";
+import { RECALL_API, recallFetch } from "../lib/recallDemo";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -33,8 +34,7 @@ type Props = {
   onOpenPdf: (paper: Paper, page: number | null) => void;
 };
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API = RECALL_API;
 
 export default function ResearchNotes({
   papers,
@@ -71,7 +71,7 @@ export default function ResearchNotes({
     setError("");
 
     try {
-      const response = await fetch(`${API}/api/v1/notes`);
+      const response = await recallFetch(`${API}/api/v1/notes`);
 
       if (!response.ok) {
         throw new Error(`Could not load notes (HTTP ${response.status}).`);
@@ -145,7 +145,7 @@ export default function ResearchNotes({
     setSuccess("");
 
     try {
-      const response = await fetch(`${API}/api/v1/notes`, {
+      const response = await recallFetch(`${API}/api/v1/notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -215,7 +215,7 @@ export default function ResearchNotes({
     setSuccess("");
 
     try {
-      const response = await fetch(`${API}/api/v1/notes/${noteId}`, {
+      const response = await recallFetch(`${API}/api/v1/notes/${noteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -259,7 +259,7 @@ export default function ResearchNotes({
     setSuccess("");
 
     try {
-      const response = await fetch(`${API}/api/v1/notes/${note.id}`, {
+      const response = await recallFetch(`${API}/api/v1/notes/${note.id}`, {
         method: "DELETE",
       });
 

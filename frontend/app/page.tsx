@@ -1,5 +1,6 @@
 
 "use client";
+import { DEMO_MODE, RECALL_API, recallFetch, demoPdfUrl, DEMO_QUESTIONS } from "./lib/recallDemo";
 
 import dynamic from "next/dynamic";
 import CollectionManager from "./components/CollectionManager";
@@ -68,8 +69,7 @@ type StreamEvent =
 
 type View = "overview" | "library" | "ask";
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API = RECALL_API;
 
 const ACTIVE_KEY = "recall-active-conversation";
 
@@ -171,7 +171,7 @@ export default function Home() {
   useEffect(() => {
     async function loadCollections() {
       try {
-        const response = await fetch(`${API}/api/v1/collections`);
+        const response = await recallFetch(`${API}/api/v1/collections`);
         if (!response.ok) {
           throw new Error("Could not load collections.");
         }
@@ -203,7 +203,7 @@ export default function Home() {
 
   async function loadPapers() {
     try {
-      const response = await fetch(`${API}/api/v1/documents`, {
+      const response = await recallFetch(`${API}/api/v1/documents`, {
         cache: "no-store",
       });
 
@@ -225,7 +225,7 @@ export default function Home() {
 
   async function loadConversations() {
     try {
-      const response = await fetch(`${API}/api/v1/conversations`, {
+      const response = await recallFetch(`${API}/api/v1/conversations`, {
         cache: "no-store",
       });
 
@@ -266,7 +266,7 @@ export default function Home() {
     window.localStorage.setItem(ACTIVE_KEY, String(id));
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/conversations/${id}`,
         { cache: "no-store" }
       );
@@ -350,7 +350,7 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/conversations/${id}`,
         { method: "DELETE" }
       );
@@ -372,7 +372,7 @@ export default function Home() {
   }
 
   async function uploadPaper() {
-    if (!selectedFile || uploading) return;
+    if (DEMO_MODE || !selectedFile || uploading) return;
 
     setUploading(true);
     setUploadError("");
@@ -386,7 +386,7 @@ export default function Home() {
       const form = new FormData();
       form.append("file", selectedFile);
 
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/documents/upload`,
         {
           method: "POST",
@@ -505,7 +505,7 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/query/stream`,
         {
           method: "POST",
@@ -609,7 +609,7 @@ export default function Home() {
     const suffix =
       page == null ? "" : `#page=${page}`;
 
-    return `${API}/api/v1/documents/${paper.id}/pdf${suffix}`;
+    return DEMO_MODE ? `${demoPdfUrl(paper.id)}${suffix}` : `${API}/api/v1/documents/${paper.id}/pdf${suffix}`;
   }
 
   async function saveCitationBookmark(
@@ -631,7 +631,7 @@ export default function Home() {
       `Source reference: ${reference}. No quoted evidence excerpt was provided.`;
 
     try {
-      const response = await fetch(`${API}/api/v1/bookmarks`, {
+      const response = await recallFetch(`${API}/api/v1/bookmarks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -910,6 +910,7 @@ export default function Home() {
       {/* MAIN CONTENT */}
 
       <main className={`recall-main min-w-0 flex-1 ${view === "ask" ? "recall-desk-main" : ""}`}>
+        {DEMO_MODE && <div role="status" className="border-b border-[var(--accent-border)] bg-[var(--accent-soft)] px-5 py-2 text-xs font-medium text-[var(--accent-text)] md:px-9">PORTFOLIO DEMO · Fictional sample papers · Scripted answers (not live AI) · Uploads disabled · Changes reset on refresh</div>}
         <header className="flex items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-5 backdrop-blur md:px-9">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
@@ -1055,9 +1056,7 @@ export default function Home() {
                   </h3>
 
                   <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-                    Upload a PDF to extract text,
-                    generate embeddings, and make it
-                    searchable in Recall.
+                    {DEMO_MODE ? "Uploads are disabled in this portfolio demo. Explore the public sample PDFs instead." : "Upload a PDF to extract text, generate embeddings, and make it searchable in Recall."}
                   </p>
 
                   <label className="mt-5 flex cursor-pointer flex-col items-center border border-dashed border-[var(--accent-border)] bg-[var(--surface-soft)] px-4 py-7 text-center hover:bg-[var(--accent-soft)]">
@@ -1078,7 +1077,7 @@ export default function Home() {
                       ref={fileRef}
                       type="file"
                       accept=".pdf,application/pdf"
-                      disabled={uploading}
+                      disabled={uploading || DEMO_MODE}
                       className="hidden"
                       onChange={(event) => {
                         setSelectedFile(
@@ -1096,7 +1095,7 @@ export default function Home() {
                       void uploadPaper()
                     }
                     disabled={
-                      !selectedFile || uploading
+                      DEMO_MODE || !selectedFile || uploading
                     }
                     className="mt-4 w-full rounded-md bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
                   >
@@ -1300,6 +1299,7 @@ export default function Home() {
                 >
 
 
+                  {DEMO_MODE && <div className="mb-3 flex flex-wrap gap-2" aria-label="Example questions">{DEMO_QUESTIONS.map((example) => <button key={example} type="button" onClick={() => setQuestion(example)} className="border border-[var(--accent-border)] px-3 py-2 text-left text-xs text-[var(--accent-text)] hover:bg-[var(--accent-soft)]">{example}</button>)}</div>}
                   <label
                     htmlFor="recall-question"
                     className="sr-only"
@@ -1312,13 +1312,14 @@ export default function Home() {
                     rows={2}
                     maxLength={2000}
                     disabled={asking}
+                    readOnly={DEMO_MODE}
                     value={question}
                     onChange={(event) =>
                       setQuestion(
                         event.target.value
                       )
                     }
-                    placeholder="What were the limitations of the gaze-following study?"
+                    placeholder={DEMO_MODE ? "Select one of the sample questions above" : "What were the limitations of the gaze-following study?"}
                     className="recall-desk-textarea w-full resize-y border-0 bg-transparent px-1 py-2 text-sm outline-none focus:ring-0 disabled:opacity-50"
                   />
 
@@ -1326,14 +1327,15 @@ export default function Home() {
                     <span className="text-xs text-[var(--text-muted)]">
                       {asking
                         ? "Retrieving evidence and generating..."
-                        : "Grounded in indexed PDFs"}
+                        : DEMO_MODE ? "Scripted examples · Curated sample PDFs" : "Grounded in indexed PDFs"}
                     </span>
 
                     <button
                       type="submit"
                       disabled={
                         asking ||
-                        !question.trim()
+                        !question.trim() ||
+                        (DEMO_MODE && !DEMO_QUESTIONS.includes(question.trim()))
                       }
                       className="bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
                     >
@@ -1352,7 +1354,7 @@ export default function Home() {
                     <PdfEvidenceViewer
                       embedded
                       key={`${openEvidence.paper.id}-${openEvidence.citation.page}-${openEvidence.citation.evidence ?? ""}`}
-                      url={`${API}/api/v1/documents/${openEvidence.paper.id}/pdf`}
+                      url={DEMO_MODE ? demoPdfUrl(openEvidence.paper.id) : `${API}/api/v1/documents/${openEvidence.paper.id}/pdf`}
                       filename={openEvidence.paper.filename}
                       initialPage={openEvidence.citation.page}
                       evidence={openEvidence.citation.evidence}

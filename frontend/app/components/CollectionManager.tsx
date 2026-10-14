@@ -1,4 +1,5 @@
 "use client";
+import { RECALL_API, recallFetch } from "../lib/recallDemo";
 
 import { useState } from "react";
 
@@ -23,8 +24,7 @@ type Props = {
   onCollectionsChanged: (collections: Collection[]) => void;
 };
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API = RECALL_API;
 
 export default function CollectionManager({
   collections,
@@ -60,7 +60,7 @@ export default function CollectionManager({
     setSuccess("");
 
     try {
-      const response = await fetch(`${API}/api/v1/collections`, {
+      const response = await recallFetch(`${API}/api/v1/collections`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ export default function CollectionManager({
       setName("");
       setDescription("");
 
-      const refresh = await fetch(`${API}/api/v1/collections`);
+      const refresh = await recallFetch(`${API}/api/v1/collections`);
 
       if (!refresh.ok) {
         throw new Error(
@@ -112,7 +112,7 @@ export default function CollectionManager({
     setSuccess("");
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/collections/${id}`,
         {
           method: "PATCH",
@@ -129,7 +129,7 @@ export default function CollectionManager({
         );
       }
 
-      const refresh = await fetch(`${API}/api/v1/collections`);
+      const refresh = await recallFetch(`${API}/api/v1/collections`);
 
       if (!refresh.ok) {
         throw new Error(
@@ -163,7 +163,7 @@ export default function CollectionManager({
     setLoadingPapers(true);
 
     try {
-      const response = await fetch(`${API}/api/v1/documents`);
+      const response = await recallFetch(`${API}/api/v1/documents`);
 
       if (!response.ok) {
         throw new Error(
@@ -195,7 +195,7 @@ export default function CollectionManager({
     setSuccess("");
 
     try {
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/collections/${collectionId}/documents/${paperId}`,
         { method: isMember ? "DELETE" : "POST" }
       );
@@ -206,7 +206,7 @@ export default function CollectionManager({
         );
       }
 
-      const refresh = await fetch(`${API}/api/v1/collections`);
+      const refresh = await recallFetch(`${API}/api/v1/collections`);
 
       if (!refresh.ok) {
         throw new Error(
@@ -247,7 +247,7 @@ export default function CollectionManager({
 
     try {
       // Recheck the collection before deleting.
-      const check = await fetch(
+      const check = await recallFetch(
         `${API}/api/v1/collections/${collection.id}`
       );
 
@@ -270,7 +270,7 @@ export default function CollectionManager({
         );
       }
 
-      const response = await fetch(
+      const response = await recallFetch(
         `${API}/api/v1/collections/${collection.id}`,
         { method: "DELETE" }
       );
@@ -286,7 +286,7 @@ export default function CollectionManager({
       setExpandedId(null);
       setSuccess(`Deleted collection "${collection.name}".`);
 
-      const refresh = await fetch(`${API}/api/v1/collections`);
+      const refresh = await recallFetch(`${API}/api/v1/collections`);
 
       if (!refresh.ok) {
         throw new Error(
