@@ -834,7 +834,7 @@ export default function Home() {
 
         <div className="hidden min-h-0 flex-1 flex-col border-t border-white/10 px-4 py-5 lg:flex">
           <div className="mb-3 flex items-center justify-between px-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--text-muted)]">
+            <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--sidebar-muted)]">
               Recent research
             </span>
 
@@ -936,7 +936,7 @@ export default function Home() {
           {view === "overview" && (
             <div className="recall-research-index space-y-10">
               <section className="recall-index-masthead border-b border-[var(--border-soft)] pb-8">
-                <div className="recall-index-overline">THE RESEARCH INDEX <span className="recall-index-rule" /> YOUR WORKSPACE</div>
+                <div className="recall-index-overline"><span>THE RESEARCH INDEX</span><span className="recall-index-rule" aria-hidden="true"/><span>YOUR WORKSPACE</span></div>
                 <div className="mt-5 flex flex-wrap items-end justify-between gap-6">
                   <div>
                     <h2 className="recall-index-display max-w-2xl text-[clamp(2.2rem,4.4vw,4.2rem)] leading-[1.07] tracking-tight text-[var(--foreground)]">
@@ -955,7 +955,7 @@ export default function Home() {
               <section className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(270px,0.75fr)]">
                 <div className="min-w-0">
                   <div className="recall-index-section-heading flex items-center justify-between gap-3">
-                    <div><span className="recall-index-number">01</span><h3>Ongoing inquiries</h3></div>
+                    <div className="recall-section-identity"><span className="recall-section-kicker">SECTION 01 / INQUIRIES</span><h3>Ongoing inquiries</h3></div>
                     <span className="recall-index-counter">{loadingHistory ? "…" : conversations.length} THREADS</span>
                   </div>
                   {historyError && <p role="alert" className="py-4 text-sm text-[var(--danger)]">{historyError}</p>}
@@ -978,7 +978,7 @@ export default function Home() {
                 </div>
                 <div className="min-w-0">
                   <div className="recall-index-section-heading flex items-center justify-between gap-3">
-                    <div><span className="recall-index-number">02</span><h3>On your desk</h3></div>
+                    <div className="recall-section-identity"><span className="recall-section-kicker">SECTION 02 / WORKSPACE</span><h3>On your desk</h3></div>
                   </div>
                   <dl className="recall-index-tally grid grid-cols-2 gap-3 border-b border-[var(--border-soft)] py-6">
                     <div><dt>INDEXED PAPERS</dt><dd>{loadingPapers ? "—" : papers.length}</dd></div>
@@ -993,7 +993,7 @@ export default function Home() {
 
               <section>
                 <div className="recall-index-section-heading flex items-center justify-between gap-3">
-                  <div><span className="recall-index-number">03</span><h3>Recently indexed</h3></div>
+                  <div className="recall-section-identity"><span className="recall-section-kicker">SECTION 03 / LIBRARY</span><h3>Recently indexed</h3></div>
                   <button type="button" onClick={() => setView("library")} className="text-xs font-semibold text-[var(--accent-text)] hover:underline">All papers <UiIcon name="arrow-right" size={13} className="ml-1 inline-block align-middle"/></button>
                 </div>
                 {paperError && <p role="alert" className="py-4 text-sm text-[var(--danger)]">{paperError}</p>}
@@ -1015,7 +1015,7 @@ export default function Home() {
           {view === "library" && (
             <div className="recall-archive space-y-9">
               <div className="border-b border-[var(--border-soft)] pb-7">
-                <div className="recall-index-overline">THE ARCHIVE <span className="recall-index-rule"/> DOCUMENTS / SOURCES</div>
+                <div className="recall-index-overline"><span>THE ARCHIVE</span><span className="recall-index-rule" aria-hidden="true"/><span>DOCUMENTS / SOURCES</span></div>
                 <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
                   <div>
                     <h2 className="recall-index-display text-[clamp(2.2rem,4vw,3.8rem)] leading-[1.08] tracking-tight">Your research library.</h2>
@@ -1026,7 +1026,7 @@ export default function Home() {
               </div>
               <div className="grid gap-9 xl:grid-cols-[minmax(0,1fr)_290px]">
                 <section className="min-w-0">
-                  <div className="recall-index-section-heading"><div><span className="recall-index-number">01</span><h3>Document register</h3></div></div>
+                  <div className="recall-index-section-heading"><div className="recall-section-identity"><span className="recall-section-kicker">SECTION 01 / DOCUMENTS</span><h3>Document register</h3></div></div>
                   <label htmlFor="paper-search" className="mt-5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Find a document</label>
                   <div className="mt-2 flex items-center border-b border-[var(--border-soft)] bg-[var(--surface)] px-3 py-1 focus-within:border-[var(--accent)]">
                     <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="shrink-0 text-[var(--text-muted)]"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
@@ -1047,7 +1047,7 @@ export default function Home() {
                   ) : <p className="py-8 text-sm text-[var(--text-muted)]">{papers.length ? "No matching papers. Try a different search." : "No papers indexed yet. Add your first document."}</p>}
                 </section>
                 <div className="recall-archive-upload min-w-0">
-                  <div className="recall-index-section-heading"><div><span className="recall-index-number">02</span><h3>New source</h3></div></div>
+                  <div className="recall-index-section-heading"><div className="recall-section-identity"><span className="recall-section-kicker">SECTION 02 / UPLOAD</span><h3>New source</h3></div></div>
                   <div className="recall-archive-upload-content mt-5">
                 <section className="recall-archive-upload-form">
                   <h3 className="text-lg font-semibold">
