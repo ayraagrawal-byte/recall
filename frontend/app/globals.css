@@ -1,23 +1,181 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8f5;
-  --foreground: #18251f;
+  color-scheme: light;
+  --background: #f7f5f0;
+  --foreground: #292c2b;
+  --surface: #ffffff;
+  --surface-soft: #f1eee9;
+  --assistant-surface: #faf8f5;
+  --border-soft: #ded8ce;
+  --text-muted: #6f6b65;
+  --sidebar: #292d2b;
+  --sidebar-muted: #c1c7c3;
+  --primary: #96573e;
+  --primary-hover: #7d442f;
+  --on-primary: #ffffff;
+  --accent: #96573e;
+  --accent-text: #854c38;
+  --accent-soft: #f1e4da;
+  --accent-soft-hover: #e9d6c6;
+  --accent-border: #d8b49e;
+  --hero: #eee7dc;
+  --copper-light: #e5ae92;
+  --danger: #ad3045;
+  --danger-solid: #a63044;
+  --danger-soft: #fff0f2;
+  --danger-border: #e3b9c0;
+  --success: #426d58;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #171a19;
+  --foreground: #eeeae3;
+  --surface: #252a28;
+  --surface-soft: #303531;
+  --assistant-surface: #2b302d;
+  --border-soft: #444a44;
+  --text-muted: #b8bbb3;
+  --sidebar: #101412;
+  --sidebar-muted: #c0c9c2;
+  --primary: #be8569;
+  --primary-hover: #d19a7b;
+  --on-primary: #1d1714;
+  --accent: #d4a08a;
+  --accent-text: #e1ac94;
+  --accent-soft: #49362e;
+  --accent-soft-hover: #604538;
+  --accent-border: #89624f;
+  --hero: #292e2b;
+  --copper-light: #ddb098;
+  --danger: #f0a1ad;
+  --danger-solid: #9c394e;
+  --danger-soft: #482d34;
+  --danger-border: #86535e;
+  --success: #a7d2b7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
 html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-button, input, textarea { font: inherit; }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-dm-sans), Arial, sans-serif; }
+button, input, textarea, select { font: inherit; }
 button:not(:disabled) { cursor: pointer; }
+h1, h2 { font-family: var(--font-newsreader), Georgia, serif; font-weight: 500; letter-spacing: -0.025em; }
+.recall-mono { font-family: var(--font-plex-mono), monospace; }
+.recall-app, .recall-main { background: var(--background); color: var(--foreground); }
+.recall-sidebar { background: var(--sidebar); color: #f2eee8; }
+.recall-sidebar .recall-nav-active { background: #eee6db; color: #292d2b; }
+.recall-sidebar .recall-nav-inactive { color: #e0e4df; background: transparent; }
+.recall-sidebar .recall-nav-inactive:hover { background: rgba(255,255,255,.10); color: white; }
+.recall-sidebar .recall-nav-active:hover { background: #e4d6c7; }
+.recall-app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), .recall-app textarea, .recall-app select { color: var(--foreground); border-color: var(--border-soft); }
+.recall-app input::placeholder, .recall-app textarea::placeholder { color: var(--text-muted); }
+.recall-app :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.recall-chat-layout { align-items: start; }
+.recall-chat { max-height: none; min-height: 0; }
+.recall-composer { position: relative; z-index: 1; flex-shrink: 0; box-shadow: none; }
+.recall-tools > section { margin-bottom: .75rem; }
+.recall-tools { min-width: 0; }
+.recall-messages { scrollbar-width: thin; }
+@media (min-width: 1280px) {
+  .recall-chat { height: max(540px, calc(100dvh - 190px)); min-height: 0; }
+  .recall-messages { min-height: 0; }
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .recall-chat { height: max(520px, calc(100dvh - 190px)); min-height: 0; }
+  .recall-messages { min-height: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+ html { scroll-behavior: auto; }
+ *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+
+/* Readable user messages in dark mode */
+:root[data-theme="dark"] .recall-user-bubble {
+  background-color: #794735;
+  color: #fff8f2;
+  border: 1px solid #a8735b;
+}
+
+/* Editorial surfaces and contained conversation scroll. */
+.recall-chat { border-radius: 5px; }
+.recall-messages { scrollbar-width: thin; scrollbar-color: var(--border-soft) transparent; scroll-behavior: auto; }
+
+/* Recall research-desk layout: spacious reading, minimal framing, fixed inquiry line. */
+@media (min-width: 1280px) {
+  .recall-desk-main { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  .recall-desk-main > header { flex: 0 0 auto; }
+  .recall-desk-body { flex: 1 1 auto; min-height: 0; width: 100%; padding-top: 16px; padding-bottom: 16px; overflow: hidden; }
+  .recall-desk-grid { height: 100%; min-height: 0; align-items: stretch; }
+  .recall-desk-inquiry { height: 100%; min-height: 0; }
+  .recall-desk-rail { height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; scrollbar-width: thin; }
+}
+.recall-desk-header { flex-shrink: 0; }
+.recall-desk-title { font-family: var(--font-newsreader), Georgia, serif; }
+.recall-desk-scope { max-width: min(310px, 100%); }
+.recall-desk-messages { scrollbar-width: thin; scrollbar-color: var(--border-soft) transparent; }
+.recall-desk-answer { background: transparent; border-radius: 0; }
+.recall-desk-composer { flex-shrink: 0; }
+.recall-desk-textarea { min-height: 50px; max-height: 170px; color: var(--foreground); }
+.recall-desk-textarea:focus-visible { outline: none; }
+.recall-desk-rail-intro { border-radius: 0; background: transparent; }
+@media (max-width: 1279px) {
+  .recall-desk-inquiry { min-height: 570px; height: min(760px, calc(100dvh - 160px)); }
+  .recall-desk-rail { height: auto; overflow: visible; }
+}
+@media (max-width: 640px) {
+  .recall-desk-inquiry { height: min(700px, calc(100dvh - 125px)); min-height: 460px; }
+  .recall-desk-header { align-items: flex-start; }
+  .recall-desk-scope { width: 100%; max-width: none; }
+}
+
+
+/* Recall integrated evidence desk — editorial split reader */
+.recall-desk-title { color: var(--foreground); text-wrap: pretty; }
+.recall-inline-pdf { min-width: 0; }
+@media (min-width: 1280px) {
+  .recall-desk-grid.recall-evidence-split {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
+  }
+  .recall-evidence-split .recall-desk-rail {
+    overflow: hidden;
+    padding-right: 0;
+    min-width: 0;
+  }
+  .recall-evidence-split .recall-inline-pdf {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+}
+@media (max-width: 1279px) {
+  .recall-evidence-split .recall-inline-pdf {
+    position: fixed;
+  }
+}
+
+/* Recall archive and index — editorial documents, not dashboard cards. */
+.recall-index-display { font-family: var(--font-newsreader), Georgia, serif; font-weight: 500; color: var(--foreground); text-wrap: balance; }
+.recall-index-overline { display: flex; align-items: center; gap: 12px; color: var(--accent-text); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.recall-index-rule { display: inline-block; width: 34px; height: 1px; background: var(--accent-border); }
+.recall-index-section-heading { display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding-bottom: 11px; border-bottom: 1px solid var(--border-soft); }
+.recall-index-section-heading > div { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.recall-index-section-heading h3 { color: var(--foreground); font-family: var(--font-newsreader), Georgia, serif; font-weight: 500; font-size: 23px; line-height: 1.25; }
+.recall-index-number { color: var(--accent-text); font-family: var(--font-plex-mono), monospace; font-size: 12px; font-weight: 500; }
+.recall-index-counter { color: var(--text-muted); font-family: var(--font-plex-mono), monospace; font-size: 10px; letter-spacing: .07em; white-space: nowrap; }
+.recall-index-entry { border-bottom: 1px solid var(--border-soft); text-decoration: none; transition: background-color .16s ease, padding-left .16s ease; }
+.recall-index-entry:hover { background: var(--surface-soft); padding-left: 8px; }
+.recall-index-tally dt { font-family: var(--font-plex-mono), monospace; font-size: 10px; letter-spacing: .08em; color: var(--text-muted); }
+.recall-index-tally dd { margin-top: 8px; font-family: var(--font-newsreader), Georgia, serif; color: var(--foreground); font-size: 38px; line-height: 1.1; }
+.recall-archive-upload-form { padding: 0; background: transparent; border: 0; }
+.recall-archive-upload-form h3 { font-family: var(--font-newsreader), Georgia, serif; font-weight: 500; font-size: 22px; }
+.recall-archive-upload-form input[type=file] { display: none; }
+@media (prefers-reduced-motion: reduce) { .recall-index-entry { transition: none; } }

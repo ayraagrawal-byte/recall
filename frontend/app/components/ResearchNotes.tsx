@@ -282,11 +282,11 @@ export default function ResearchNotes({
   }
 
   return (
-    <section className="mb-4 rounded-xl border border-[#e1e7dd] bg-white p-4">
+    <section className="mb-4 rounded-md border border-[var(--border-soft)] bg-[var(--surface)] p-4">
       <button
         type="button"
         onClick={() => setOpen((previous) => !previous)}
-        className="flex w-full items-center justify-between text-left text-sm font-semibold text-[#183e2c]"
+        className="flex w-full items-center justify-between text-left text-sm font-semibold text-[var(--foreground)]"
         aria-expanded={open}
       >
         <span>Research Notes</span>
@@ -295,19 +295,19 @@ export default function ResearchNotes({
 
       {open && (
         <div className="mt-4 space-y-5">
-          <p className="text-xs leading-5 text-stone-500">
+          <p className="text-xs leading-5 text-[var(--text-muted)]">
             Save your thoughts, observations, and findings alongside
             your research PDFs.
           </p>
 
-          <div className="space-y-3 rounded-xl bg-[#f5f8f3] p-4">
-            <h3 className="text-sm font-semibold text-[#183e2c]">
+          <div className="space-y-3 rounded-md bg-[var(--surface-soft)] p-4">
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">
               New research note
             </h3>
 
             <label
               htmlFor="note-document"
-              className="block text-xs font-semibold text-stone-600"
+              className="block text-xs font-semibold text-[var(--text-muted)]"
             >
               Research paper
             </label>
@@ -320,7 +320,7 @@ export default function ResearchNotes({
                 setDocumentId(event.target.value);
                 setCollectionId("");
               }}
-              className="w-full rounded-lg border border-stone-200 bg-white p-3 text-sm"
+              className="w-full rounded-sm border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-sm"
             >
               <option value="">Select a PDF</option>
               {papers.map((paper) => (
@@ -332,7 +332,7 @@ export default function ResearchNotes({
 
             <label
               htmlFor="note-collection"
-              className="block text-xs font-semibold text-stone-600"
+              className="block text-xs font-semibold text-[var(--text-muted)]"
             >
               Research collection (optional)
             </label>
@@ -342,7 +342,7 @@ export default function ResearchNotes({
               value={collectionId}
               disabled={!documentId}
               onChange={(event) => setCollectionId(event.target.value)}
-              className="w-full rounded-lg border border-stone-200 bg-white p-3 text-sm disabled:opacity-50"
+              className="w-full rounded-sm border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-sm disabled:opacity-50"
             >
               <option value="">No collection</option>
               {eligibleCollections.map((collection) => (
@@ -354,7 +354,7 @@ export default function ResearchNotes({
 
             <label
               htmlFor="note-page"
-              className="block text-xs font-semibold text-stone-600"
+              className="block text-xs font-semibold text-[var(--text-muted)]"
             >
               PDF page (optional)
             </label>
@@ -367,12 +367,12 @@ export default function ResearchNotes({
               value={pageNumber}
               onChange={(event) => setPageNumber(event.target.value)}
               placeholder="e.g. 4"
-              className="w-full rounded-lg border border-stone-200 bg-white p-3 text-sm"
+              className="w-full rounded-sm border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-sm"
             />
 
             <label
               htmlFor="note-title"
-              className="block text-xs font-semibold text-stone-600"
+              className="block text-xs font-semibold text-[var(--text-muted)]"
             >
               Note title
             </label>
@@ -384,12 +384,12 @@ export default function ResearchNotes({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Key findings"
-              className="w-full rounded-lg border border-stone-200 bg-white p-3 text-sm"
+              className="w-full rounded-sm border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-sm"
             />
 
             <label
               htmlFor="note-content"
-              className="block text-xs font-semibold text-stone-600"
+              className="block text-xs font-semibold text-[var(--text-muted)]"
             >
               Your notes
             </label>
@@ -402,7 +402,7 @@ export default function ResearchNotes({
               value={content}
               onChange={(event) => setContent(event.target.value)}
               placeholder="Write your research observations..."
-              className="w-full resize-y rounded-lg border border-stone-200 bg-white p-3 text-sm"
+              className="w-full resize-y rounded-sm border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-sm"
             />
 
             <button
@@ -414,7 +414,7 @@ export default function ResearchNotes({
                 !title.trim() ||
                 !content.trim()
               }
-              className="rounded-lg bg-[#173e31] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              className="rounded-sm bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save research note"}
             </button>
@@ -422,7 +422,7 @@ export default function ResearchNotes({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-[#183e2c]">
+              <h3 className="text-sm font-semibold text-[var(--foreground)]">
                 Saved notes ({notes.length})
               </h3>
 
@@ -430,7 +430,7 @@ export default function ResearchNotes({
                 type="button"
                 onClick={() => void loadNotes()}
                 disabled={loading}
-                className="text-xs font-semibold text-[#467850] disabled:opacity-50"
+                className="text-xs font-semibold text-[var(--accent-text)] disabled:opacity-50"
               >
                 Refresh
               </button>
@@ -441,15 +441,15 @@ export default function ResearchNotes({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search notes or papers..."
-              className="w-full rounded-lg border border-stone-200 p-3 text-sm"
+              className="w-full rounded-sm border border-[var(--border-soft)] p-3 text-sm"
             />
 
             {loading && (
-              <p className="text-xs text-stone-500">Loading notes...</p>
+              <p className="text-xs text-[var(--text-muted)]">Loading notes...</p>
             )}
 
             {!loading && visibleNotes.length === 0 && (
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-[var(--text-muted)]">
                 No matching notes yet.
               </p>
             )}
@@ -466,7 +466,7 @@ export default function ResearchNotes({
               return (
                 <article
                   key={note.id}
-                  className="rounded-xl border border-stone-200 p-4"
+                  className="rounded-md border border-[var(--border-soft)] p-4"
                 >
                   {editingId === note.id ? (
                     <div className="space-y-3">
@@ -477,7 +477,7 @@ export default function ResearchNotes({
                           maxLength={255}
                           disabled={editingSaving}
                           onChange={(event) => setEditTitle(event.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-200 p-2 text-sm"
+                          className="mt-1 w-full rounded-sm border border-[var(--border-soft)] p-2 text-sm"
                         />
                       </label>
 
@@ -490,7 +490,7 @@ export default function ResearchNotes({
                           value={editPage}
                           disabled={editingSaving}
                           onChange={(event) => setEditPage(event.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-200 p-2 text-sm"
+                          className="mt-1 w-full rounded-sm border border-[var(--border-soft)] p-2 text-sm"
                         />
                       </label>
 
@@ -502,7 +502,7 @@ export default function ResearchNotes({
                           rows={4}
                           disabled={editingSaving}
                           onChange={(event) => setEditContent(event.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-200 p-2 text-sm"
+                          className="mt-1 w-full rounded-sm border border-[var(--border-soft)] p-2 text-sm"
                         />
                       </label>
 
@@ -511,7 +511,7 @@ export default function ResearchNotes({
                           type="button"
                           disabled={editingSaving || !editTitle.trim() || !editContent.trim()}
                           onClick={() => void saveEdit(note.id)}
-                          className="rounded-lg bg-[#173e31] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                          className="rounded-sm bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-[var(--on-primary)] disabled:opacity-50"
                         >
                           {editingSaving ? "Saving..." : "Save changes"}
                         </button>
@@ -519,7 +519,7 @@ export default function ResearchNotes({
                           type="button"
                           disabled={editingSaving}
                           onClick={() => setEditingId(null)}
-                          className="rounded-lg border border-stone-200 px-3 py-2 text-xs"
+                          className="rounded-sm border border-[var(--border-soft)] px-3 py-2 text-xs"
                         >
                           Cancel
                         </button>
@@ -528,20 +528,20 @@ export default function ResearchNotes({
                   ) : (
                     <>
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-sm font-semibold text-[#183e2c]">
+                        <h4 className="text-sm font-semibold text-[var(--foreground)]">
                           {note.title}
                         </h4>
                         <button
                           type="button"
                           disabled={saving || editingSaving || deleting}
                           onClick={() => beginEdit(note)}
-                          className="text-xs font-semibold text-[#467850] disabled:opacity-50"
+                          className="text-xs font-semibold text-[var(--accent-text)] disabled:opacity-50"
                         >
                           Edit
                         </button>
                       </div>
 
-                  <p className="mt-2 text-xs text-stone-500">
+                  <p className="mt-2 text-xs text-[var(--text-muted)]">
                     {paper?.filename ?? `Document ${note.document_id}`}
                     {note.page_number !== null
                       ? ` · Page ${note.page_number}`
@@ -549,7 +549,7 @@ export default function ResearchNotes({
                   </p>
 
                   {collection && (
-                    <p className="mt-1 text-xs text-[#467850]">
+                    <p className="mt-1 text-xs text-[var(--accent-text)]">
                       {collection.name}
                     </p>
                   )}
@@ -560,7 +560,7 @@ export default function ResearchNotes({
                       onClick={() =>
                         onOpenPdf(paper, note.page_number)
                       }
-                      className="mt-3 inline-flex items-center rounded-lg border border-[#c8dacb] bg-[#eef5e9] px-3 py-2 text-xs font-semibold text-[#315a3b] hover:bg-[#e0eddd]"
+                      className="mt-3 inline-flex items-center rounded-sm border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--accent-text)] hover:bg-[var(--accent-soft-hover)]"
                     >
                       Open PDF
                       {note.page_number !== null
@@ -569,14 +569,14 @@ export default function ResearchNotes({
                     </button>
                   )}
 
-                  <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-stone-700">
+                  <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--foreground)]">
                     {note.content}
                   </p>
 
-                  <div className="mt-4 border-t border-stone-100 pt-3">
+                  <div className="mt-4 border-t border-[var(--border-soft)] pt-3">
                     {deletingId === note.id ? (
-                      <div className="space-y-2 rounded-lg border border-rose-200 p-3">
-                        <p className="text-xs text-rose-700">
+                      <div className="space-y-2 rounded-sm border border-[var(--danger-border)] p-3">
+                        <p className="text-xs text-[var(--danger)]">
                           Type the exact note title to confirm deletion.
                           The linked PDF will be preserved.
                         </p>
@@ -589,7 +589,7 @@ export default function ResearchNotes({
                             setDeleteConfirmation(event.target.value)
                           }
                           placeholder={note.title}
-                          className="w-full rounded-lg border border-stone-200 p-2 text-sm"
+                          className="w-full rounded-sm border border-[var(--border-soft)] p-2 text-sm"
                         />
 
                         <div className="flex gap-2">
@@ -597,7 +597,7 @@ export default function ResearchNotes({
                             type="button"
                             disabled={deleting || deleteConfirmation !== note.title}
                             onClick={() => void deleteNote(note)}
-                            className="rounded-lg bg-rose-700 px-3 py-2 text-xs text-white disabled:opacity-50"
+                            className="rounded-sm bg-[var(--danger-solid)] px-3 py-2 text-xs text-white disabled:opacity-50"
                           >
                             {deleting ? "Deleting..." : "Confirm delete"}
                           </button>
@@ -609,7 +609,7 @@ export default function ResearchNotes({
                               setDeletingId(null);
                               setDeleteConfirmation("");
                             }}
-                            className="rounded-lg border border-stone-200 px-3 py-2 text-xs"
+                            className="rounded-sm border border-[var(--border-soft)] px-3 py-2 text-xs"
                           >
                             Cancel
                           </button>
@@ -625,7 +625,7 @@ export default function ResearchNotes({
                           setDeleteConfirmation("");
                           setError("");
                         }}
-                        className="text-xs font-semibold text-rose-700 disabled:opacity-50"
+                        className="text-xs font-semibold text-[var(--danger)] disabled:opacity-50"
                       >
                         Delete note
                       </button>
@@ -639,13 +639,13 @@ export default function ResearchNotes({
           </div>
 
           {error && (
-            <p role="alert" className="text-xs text-rose-700">
+            <p role="alert" className="text-xs text-[var(--danger)]">
               {error}
             </p>
           )}
 
           {success && (
-            <p role="status" className="text-xs text-green-700">
+            <p role="status" className="text-xs text-[var(--accent-text)]">
               {success}
             </p>
           )}

@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import CollectionManager from "./components/CollectionManager";
 import ResearchNotes from "./components/ResearchNotes";
 import SavedBookmarks from "./components/SavedBookmarks";
+import AppearanceSwitcher from "./components/AppearanceSwitcher";
+import UiIcon from "./components/UiIcon";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -99,14 +101,14 @@ function Stat({
   note: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#e1e7dd] bg-white p-6">
-      <div className="text-xs font-medium text-stone-500">
+    <div className="rounded-md border border-[var(--border-soft)] bg-[var(--surface)] p-6">
+      <div className="text-xs font-medium text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-3 text-3xl font-semibold text-[#183e2c]">
+      <div className="mt-3 text-3xl font-semibold text-[var(--foreground)]">
         {value}
       </div>
-      <div className="mt-2 text-xs text-stone-400">
+      <div className="mt-2 text-xs text-[var(--text-muted)]">
         {note}
       </div>
     </div>
@@ -159,7 +161,8 @@ export default function Home() {
   } | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const followLatestRef = useRef(true);
   const activeIdRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
   const askingRef = useRef(false);
@@ -192,10 +195,10 @@ export default function Home() {
   }, [activeId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-    });
+    const panel = messagesRef.current;
+    if (panel && followLatestRef.current) {
+      panel.scrollTop = panel.scrollHeight;
+    }
   }, [messages]);
 
   async function loadPapers() {
@@ -246,6 +249,7 @@ export default function Home() {
 
   async function openConversation(id: number) {
     if (askingRef.current) return;
+    followLatestRef.current = true;
 
     collectionConversationIdRef.current = null;
     setSelectedCollectionId(null);
@@ -318,6 +322,7 @@ export default function Home() {
 
   function newChat() {
     if (askingRef.current) return;
+    followLatestRef.current = true;
 
     collectionConversationIdRef.current = null;
 
@@ -424,6 +429,7 @@ export default function Home() {
     const text = question.trim();
 
     if (!text || askingRef.current) return;
+    followLatestRef.current = true;
 
     const conversationId =
       selectedCollectionId === null
@@ -668,9 +674,9 @@ export default function Home() {
     if (!citations.length) return null;
 
     return (
-      <div className="mt-5 border-t border-stone-200 pt-4">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-stone-500">
-          Evidence &amp; sources
+      <div className="recall-desk-citations mt-6 border-t border-[var(--border-soft)] pt-3">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          SOURCE REGISTER
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -682,7 +688,7 @@ export default function Home() {
             const paper = matches.length === 1 ? matches[0] : null;
 
             const label = citation.filename +
-              (citation.page == null ? "" : ` ? p. ${citation.page}`);
+              (citation.page == null ? "" : ` · p. ${citation.page}`);
 
             const key = `${paper?.id ?? "missing"}:${citation.page ?? "none"}:${citation.evidence ?? ""}`;
             const isSaved = bookmarkSavedKeys.has(key);
@@ -693,12 +699,12 @@ export default function Home() {
               return (
                 <span
                   key={`${label}-${index}`}
-                  className="rounded-lg bg-stone-100 px-3 py-2 text-xs text-stone-500"
+                  className="rounded-sm bg-[var(--surface-soft)] px-3 py-2 text-xs text-[var(--text-muted)]"
                   title={matches.length > 1
                     ? "Multiple PDFs share this filename; unable to identify the source"
                     : "Original PDF unavailable"}
                 >
-                  {label} ? {matches.length > 1 ? "ambiguous PDF" : "unavailable"}
+                  {label} · {matches.length > 1 ? "ambiguous PDF" : "unavailable"}
                 </span>
               );
             }
@@ -709,26 +715,26 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setOpenEvidence({ paper, citation })}
-                    className="max-w-full truncate rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-xs font-medium text-emerald-900 hover:bg-emerald-100"
+                    className="recall-desk-reference max-w-full truncate border-b border-[var(--accent-border)] px-1 py-1.5 text-left text-xs font-medium text-[var(--accent-text)] hover:bg-[var(--accent-soft)]"
                     title={`View evidence in ${label}`}
                   >
-                    {label} ?
+                    {`[${String(index + 1).padStart(2, "0")}]`} {label} <UiIcon name="arrow-up-right" size={14} className="ml-1 inline-block align-text-bottom" />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => void saveCitationBookmark(paper, citation, key)}
                     disabled={isSaved || bookmarkSavingKey !== null}
-                    className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="recall-desk-bookmark px-2 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent-text)] disabled:cursor-not-allowed disabled:opacity-60"
                     title={hasEvidence
                       ? "Save citation and evidence excerpt"
                       : "Save source reference (no evidence excerpt provided)"}
                   >
-                    {isSaved ? "Saved ?" : isSaving ? "Saving..." : "Save Bookmark"}
+                    {isSaved ? "Saved" : isSaving ? "Saving..." : "Save Bookmark"}
                   </button>
                 </div>
                 {bookmarkError?.key === key && (
-                  <p role="alert" className="text-xs text-rose-700">
+                  <p role="alert" className="text-xs text-[var(--danger)]">
                     {bookmarkError.message}
                   </p>
                 )}
@@ -753,27 +759,27 @@ export default function Home() {
     .slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[#f7f8f5] text-[#18251f] lg:flex">
+    <div className="recall-app min-h-screen lg:flex">
       {/* SIDEBAR */}
 
-      <aside className="border-b border-[#e3e8e0] bg-[#112d25] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:border-b-0">
+      <aside className="recall-sidebar border-b border-[var(--border-soft)] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:border-b-0">
         <div className="flex items-center justify-between px-6 py-6">
           <div>
             <div className="text-2xl font-semibold tracking-[-0.06em]">
               recall
-              <span className="text-[#b8df99]">
+              <span className="text-[var(--copper-light)]">
                 .
               </span>
             </div>
 
-            <div className="mt-1 text-[10px] uppercase tracking-[0.23em] text-[#9cb7aa]">
+            <div className="mt-1 text-[10px] uppercase tracking-[0.23em] text-[var(--sidebar-muted)]">
               Research workspace
             </div>
           </div>
+        </div>
 
-          <span className="rounded-md border border-white/20 px-2 py-1 text-[10px] text-[#c5d8c8]">
-            2.0
-          </span>
+        <div className="px-3 pb-3">
+          <AppearanceSwitcher />
         </div>
 
         <nav
@@ -787,14 +793,32 @@ export default function Home() {
               key={item}
               type="button"
               onClick={() => setView(item)}
-              className={`w-full min-w-fit rounded-xl px-4 py-3 text-left text-sm transition ${
+              className={`w-full min-w-fit rounded-md px-4 py-3 text-left text-sm transition ${
                 view === item
-                  ? "bg-[#d9efc4] font-semibold text-[#193428]"
-                  : "text-[#b7cbc0] hover:bg-white/10 hover:text-white"
+                  ? "recall-nav-active font-semibold"
+                  : "recall-nav-inactive"
               }`}
             >
-              <span className="mr-3 opacity-75">
-                {["â—«", "â–¤", "âœ³"][index]}
+              <span className="mr-3 inline-flex w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                {index === 0 ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="9" rx="1" />
+                    <rect x="14" y="3" width="7" height="5" rx="1" />
+                    <rect x="14" y="12" width="7" height="9" rx="1" />
+                    <rect x="3" y="16" width="7" height="5" rx="1" />
+                  </svg>
+                ) : index === 1 ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2Z" />
+                    <path d="M4 17a2 2 0 0 1 2-2h13" />
+                    <path d="M8 7h7" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-5 3v-6.5a7.5 7.5 0 1 1 18-4Z" />
+                    <path d="M8 10h8M8 14h5" />
+                  </svg>
+                )}
               </span>
 
               {
@@ -806,27 +830,15 @@ export default function Home() {
               }
             </button>
           ))}
-
-          <div className="hidden px-4 pb-2 pt-7 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7f9c8f] lg:block">
-            Coming next
-          </div>
-
-          <div className="hidden cursor-not-allowed rounded-xl px-4 py-3 text-sm text-[#718d80] lg:block">
-            â‡„ <span className="ml-2">Compare papers</span>
-          </div>
-
-          <div className="hidden cursor-not-allowed rounded-xl px-4 py-3 text-sm text-[#718d80] lg:block">
-            â–« <span className="ml-2">Collections</span>
-          </div>
         </nav>
 
         <div className="hidden min-h-0 flex-1 flex-col border-t border-white/10 px-4 py-5 lg:flex">
           <div className="mb-3 flex items-center justify-between px-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#91ad9e]">
+            <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--text-muted)]">
               Recent research
             </span>
 
-            <span className="text-xs text-[#91ad9e]">
+            <span className="text-xs text-[var(--text-muted)]">
               {conversations.length}
             </span>
           </div>
@@ -834,14 +846,14 @@ export default function Home() {
           <button
             onClick={newChat}
             disabled={asking}
-            className="mb-3 rounded-lg border border-white/20 px-3 py-2 text-left text-xs font-medium hover:bg-white/10 disabled:opacity-50"
+            className="mb-3 rounded-sm border border-white/20 px-3 py-2 text-left text-xs font-medium hover:bg-white/10 disabled:opacity-50"
           >
             + New research question
           </button>
 
           <div className="space-y-1 overflow-y-auto">
             {loadingHistory && (
-              <p className="px-2 text-xs text-[#a8bcb1]">
+              <p className="px-2 text-xs text-[var(--sidebar-muted)]">
                 Loading...
               </p>
             )}
@@ -855,7 +867,7 @@ export default function Home() {
             {conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group flex items-center gap-1 rounded-lg ${
+                className={`group flex items-center gap-1 rounded-sm ${
                   activeId === conversation.id
                     ? "bg-white/15"
                     : "hover:bg-white/10"
@@ -868,7 +880,7 @@ export default function Home() {
                       conversation.id
                     )
                   }
-                  className="min-w-0 flex-1 truncate px-3 py-2 text-left text-xs text-[#dce8df] disabled:opacity-50"
+                  className="min-w-0 flex-1 truncate px-3 py-2 text-left text-xs text-[var(--sidebar-muted)] disabled:opacity-50"
                   title={conversation.title}
                 >
                   {conversation.title}
@@ -881,30 +893,30 @@ export default function Home() {
                   }
                   aria-label={`Delete ${conversation.title}`}
                   title="Delete conversation"
-                  className="px-2 text-[#9eb6a9] hover:text-rose-200 disabled:opacity-50"
+                  className="px-2 text-[var(--sidebar-muted)] hover:text-rose-200 disabled:opacity-50"
                 >
-                  Ã—
+                  <UiIcon name="close" size={15} />
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="hidden border-t border-white/10 px-6 py-5 text-xs text-[#8eac9d] lg:block">
+        <div className="hidden border-t border-white/10 px-6 py-5 text-xs text-[var(--sidebar-muted)] lg:block">
           Your research, remembered.
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
 
-      <main className="min-w-0 flex-1">
-        <header className="flex items-center justify-between border-b border-[#e3e8e0] bg-white/80 px-5 py-5 backdrop-blur md:px-9">
+      <main className={`recall-main min-w-0 flex-1 ${view === "ask" ? "recall-desk-main" : ""}`}>
+        <header className="flex items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-5 backdrop-blur md:px-9">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#789184]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
               Workspace / {view}
             </div>
 
-            <h1 className="mt-1 text-xl font-semibold tracking-tight">
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--foreground)]">
               {viewTitle[view]}
             </h1>
           </div>
@@ -913,313 +925,151 @@ export default function Home() {
             type="button"
             onClick={newChat}
             disabled={asking}
-            className="rounded-xl bg-[#173e31] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#275442] disabled:opacity-50"
+            className="rounded-md bg-[var(--primary)] px-4 py-2.5 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
           >
             + New question
           </button>
         </header>
 
-        <div className="mx-auto max-w-6xl px-5 py-8 md:px-9 md:py-10">
+        <div className={`mx-auto max-w-6xl px-5 py-8 md:px-9 md:py-10 ${view === "ask" ? "recall-desk-body" : ""}`}>
           {/* OVERVIEW */}
-
           {view === "overview" && (
-            <div className="space-y-7">
-              <div className="rounded-[24px] bg-[#dcebcf] p-7 md:p-10">
-                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#52755b]">
-                  Your research command center
-                </div>
-
-                <h2 className="mt-4 max-w-xl text-3xl font-semibold leading-tight tracking-[-0.04em] md:text-5xl">
-                  Think across papers.
-                  <br />
-                  <span className="text-[#5e805f]">
-                    Keep the evidence.
-                  </span>
-                </h2>
-
-                <p className="mt-4 max-w-lg text-sm leading-6 text-[#4f6755]">
-                  A home for your literature, questions,
-                  and source-grounded discoveries.
-                </p>
-
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <button
-                    onClick={newChat}
-                    className="rounded-xl bg-[#173e31] px-5 py-3 text-sm font-semibold text-white hover:bg-[#285641]"
-                  >
-                    Ask your papers â†—
-                  </button>
-
-                  <button
-                    onClick={() => setView("library")}
-                    className="rounded-xl border border-[#aac4a5] bg-white/50 px-5 py-3 text-sm font-semibold text-[#214534] hover:bg-white"
-                  >
-                    Explore library
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Stat
-                  label="Indexed papers"
-                  value={
-                    loadingPapers
-                      ? "â€”"
-                      : String(papers.length)
-                  }
-                  note="In your research library"
-                />
-
-                <Stat
-                  label="Research threads"
-                  value={
-                    loadingHistory
-                      ? "â€”"
-                      : String(conversations.length)
-                  }
-                  note="Saved conversations"
-                />
-
-                <Stat
-                  label="Source-backed answers"
-                  value="On"
-                  note="Citations linked to PDFs"
-                />
-              </div>
-
-              <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-                <section className="rounded-2xl border border-[#e1e7dd] bg-white p-6">
-                  <div className="mb-5 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">
-                        Recently indexed papers
-                      </h3>
-
-                      <p className="mt-1 text-xs text-stone-500">
-                        Jump back into your reading.
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => setView("library")}
-                      className="text-xs font-semibold text-[#3d7153] hover:underline"
-                    >
-                      View library â†’
-                    </button>
-                  </div>
-
-                  {paperError && (
-                    <p className="text-sm text-rose-700">
-                      {paperError}
+            <div className="recall-research-index space-y-10">
+              <section className="recall-index-masthead border-b border-[var(--border-soft)] pb-8">
+                <div className="recall-index-overline">THE RESEARCH INDEX <span className="recall-index-rule" /> YOUR WORKSPACE</div>
+                <div className="mt-5 flex flex-wrap items-end justify-between gap-6">
+                  <div>
+                    <h2 className="recall-index-display max-w-2xl text-[clamp(2.2rem,4.4vw,4.2rem)] leading-[1.07] tracking-tight text-[var(--foreground)]">
+                      A record of your thinking.
+                    </h2>
+                    <p className="mt-4 max-w-lg text-sm leading-7 text-[var(--text-muted)]">
+                      Return to an inquiry, follow a source, or start a new question. Your research stays connected to its evidence.
                     </p>
+                  </div>
+                  <button type="button" onClick={newChat} className="recall-index-action inline-flex items-center gap-2 border-b border-[var(--accent-border)] pb-2 text-sm font-semibold text-[var(--accent-text)] hover:text-[var(--foreground)]">
+                    Begin an inquiry <UiIcon name="arrow-up-right" size={17} />
+                  </button>
+                </div>
+              </section>
+
+              <section className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(270px,0.75fr)]">
+                <div className="min-w-0">
+                  <div className="recall-index-section-heading flex items-center justify-between gap-3">
+                    <div><span className="recall-index-number">01</span><h3>Ongoing inquiries</h3></div>
+                    <span className="recall-index-counter">{loadingHistory ? "…" : conversations.length} THREADS</span>
+                  </div>
+                  {historyError && <p role="alert" className="py-4 text-sm text-[var(--danger)]">{historyError}</p>}
+                  {loadingHistory && <p className="py-5 text-sm text-[var(--text-muted)]">Loading your research history…</p>}
+                  {!loadingHistory && conversations.length === 0 && (
+                    <div className="py-7 text-sm text-[var(--text-muted)]">No inquiries yet. Start with a question about one of your papers.</div>
                   )}
-
-                  {!loadingPapers &&
-                    papers.length === 0 && (
-                      <p className="rounded-xl bg-stone-50 p-5 text-sm text-stone-500">
-                        Your library is empty. Add a PDF
-                        from the Paper library.
-                      </p>
-                    )}
-
-                  {latestPapers.map((paper) => (
-                    <a
-                      key={paper.id}
-                      href={paperUrl(paper)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 border-t border-stone-100 py-4 hover:text-[#3c7955]"
-                    >
-                      <div className="rounded-lg bg-[#edf2e9] px-3 py-3 text-xs font-bold text-[#507b59]">
-                        PDF
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="truncate text-sm font-medium"
-                          title={paper.filename}
-                        >
-                          {paper.filename}
-                        </div>
-
-                        <div className="mt-1 text-xs text-stone-400">
-                          {dateLabel(paper.created_at)}
-                        </div>
-                      </div>
-
-                      <span className="text-stone-400">
-                        â†—
-                      </span>
-                    </a>
-                  ))}
-                </section>
-
-                <section className="rounded-2xl border border-[#e1e7dd] bg-white p-6">
-                  <h3 className="text-lg font-semibold">
-                    Pick up where you left off
-                  </h3>
-
-                  <p className="mb-4 mt-1 text-xs text-stone-500">
-                    Your most recent research threads.
-                  </p>
-
-                  {conversations
-                    .slice(0, 5)
-                    .map((conversation) => (
-                      <button
-                        key={conversation.id}
-                        onClick={() =>
-                          void openConversation(
-                            conversation.id
-                          )
-                        }
-                        className="block w-full border-t border-stone-100 py-4 text-left hover:text-[#3c7955]"
-                      >
-                        <div className="truncate text-sm font-medium">
-                          {conversation.title}
-                        </div>
-
-                        <div className="mt-1 text-xs text-stone-400">
-                          {dateLabel(
-                            conversation.updated_at
-                          )}
-                        </div>
+                  <div className="recall-index-list">
+                    {conversations.slice(0, 6).map((conversation, index) => (
+                      <button key={conversation.id} type="button" onClick={() => void openConversation(conversation.id)} className="recall-index-entry group flex w-full items-center gap-4 py-4 text-left">
+                        <span className="recall-index-number shrink-0">{String(index + 1).padStart(2, "0")}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-[var(--foreground)]" title={conversation.title}>{conversation.title}</span>
+                          <span className="mt-1 block text-xs text-[var(--text-muted)]">Last explored {dateLabel(conversation.updated_at)}</span>
+                        </span>
+                        <span className="text-[var(--accent-text)] opacity-60 transition-opacity group-hover:opacity-100"><UiIcon name="arrow-up-right" size={17}/></span>
                       </button>
                     ))}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="recall-index-section-heading flex items-center justify-between gap-3">
+                    <div><span className="recall-index-number">02</span><h3>On your desk</h3></div>
+                  </div>
+                  <dl className="recall-index-tally grid grid-cols-2 gap-3 border-b border-[var(--border-soft)] py-6">
+                    <div><dt>INDEXED PAPERS</dt><dd>{loadingPapers ? "—" : papers.length}</dd></div>
+                    <div><dt>SAVED INQUIRIES</dt><dd>{loadingHistory ? "—" : conversations.length}</dd></div>
+                  </dl>
+                  <p className="py-5 text-sm leading-7 text-[var(--text-muted)]">Every answer can be traced to the original document and revisited in the evidence reader.</p>
+                  <button type="button" onClick={() => setView("library")} className="recall-index-action inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-text)] hover:underline">
+                    Browse the archive <UiIcon name="arrow-right" size={16}/>
+                  </button>
+                </div>
+              </section>
 
-                  {!loadingHistory &&
-                    conversations.length === 0 && (
-                      <p className="rounded-xl bg-stone-50 p-5 text-sm text-stone-500">
-                        No research threads yet. Start
-                        by asking a question.
-                      </p>
-                    )}
-                </section>
-              </div>
+              <section>
+                <div className="recall-index-section-heading flex items-center justify-between gap-3">
+                  <div><span className="recall-index-number">03</span><h3>Recently indexed</h3></div>
+                  <button type="button" onClick={() => setView("library")} className="text-xs font-semibold text-[var(--accent-text)] hover:underline">All papers <UiIcon name="arrow-right" size={13} className="ml-1 inline-block align-middle"/></button>
+                </div>
+                {paperError && <p role="alert" className="py-4 text-sm text-[var(--danger)]">{paperError}</p>}
+                {!loadingPapers && papers.length === 0 && <p className="py-6 text-sm text-[var(--text-muted)]">Your archive is empty. Add a paper in the Library.</p>}
+                <div className="recall-index-list">
+                  {latestPapers.map((paper, index) => (
+                    <a key={paper.id} href={paperUrl(paper)} target="_blank" rel="noopener noreferrer" className="recall-index-entry group flex items-center gap-4 py-4">
+                      <span className="recall-index-number shrink-0">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--foreground)]" title={paper.filename}>{paper.filename}</span><span className="mt-1 block text-xs text-[var(--text-muted)]">PDF · Indexed {dateLabel(paper.created_at)}</span></span>
+                      <span className="text-[var(--accent-text)] opacity-60 group-hover:opacity-100"><UiIcon name="arrow-up-right" size={17}/></span>
+                    </a>
+                  ))}
+                </div>
+              </section>
             </div>
           )}
 
           {/* PAPER LIBRARY */}
-
           {view === "library" && (
-            <div className="space-y-6">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6e9176]">
-                    Your sources
+            <div className="recall-archive space-y-9">
+              <div className="border-b border-[var(--border-soft)] pb-7">
+                <div className="recall-index-overline">THE ARCHIVE <span className="recall-index-rule"/> DOCUMENTS / SOURCES</div>
+                <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <h2 className="recall-index-display text-[clamp(2.2rem,4vw,3.8rem)] leading-[1.08] tracking-tight">Your research library.</h2>
+                    <p className="mt-3 max-w-lg text-sm leading-7 text-[var(--text-muted)]">Every inquiry starts somewhere. Browse the papers behind your findings.</p>
                   </div>
-
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-                    A library built for inquiry.
-                  </h2>
-
-                  <p className="mt-2 text-sm text-stone-500">
-                    Find, open, and add research PDFs.
-                  </p>
+                  <span className="recall-index-counter">{loadingPapers ? "…" : papers.length} DOCUMENTS INDEXED</span>
                 </div>
-
-                <span className="rounded-full bg-[#e6efe1] px-3 py-1.5 text-xs font-semibold text-[#3d6548]">
-                  {papers.length} indexed
-                </span>
               </div>
-
-              <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-                <section className="rounded-2xl border border-[#e1e7dd] bg-white p-6">
-                  <label
-                    htmlFor="paper-search"
-                    className="mb-2 block text-xs font-semibold text-stone-600"
-                  >
-                    Search your library
-                  </label>
-
-                  <input
-                    id="paper-search"
-                    value={search}
-                    onChange={(event) =>
-                      setSearch(event.target.value)
-                    }
-                    placeholder="Search paper filenames..."
-                    className="w-full rounded-xl border border-stone-200 bg-[#fafbf9] px-4 py-3 text-sm outline-none focus:border-[#609474]"
-                  />
-
-                  {paperError && (
-                    <p
-                      role="alert"
-                      className="mt-4 text-sm text-rose-700"
-                    >
-                      {paperError}
-                    </p>
-                  )}
-
-                  {loadingPapers ? (
-                    <p className="mt-6 text-sm text-stone-500">
-                      Loading papers...
-                    </p>
-                  ) : filteredPapers.length ? (
-                    <div className="mt-4 divide-y divide-stone-100">
-                      {filteredPapers.map((paper) => (
-                        <div
-                          key={paper.id}
-                          className="flex items-center gap-3 py-4"
-                        >
-                          <div className="rounded-xl bg-[#eaf2e6] p-3 text-xs font-bold text-[#4b7b56]">
-                            PDF
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <p className="break-all text-sm font-semibold">
-                              {paper.filename}
-                            </p>
-
-                            <p className="mt-1 text-xs text-stone-400">
-                              Indexed{" "}
-                              {dateLabel(
-                                paper.created_at
-                              )}
-                            </p>
-                          </div>
-
-                          <a
-                            href={paperUrl(paper)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold hover:border-[#86ae8d] hover:text-[#387449]"
-                          >
-                            Open â†—
-                          </a>
+              <div className="grid gap-9 xl:grid-cols-[minmax(0,1fr)_290px]">
+                <section className="min-w-0">
+                  <div className="recall-index-section-heading"><div><span className="recall-index-number">01</span><h3>Document register</h3></div></div>
+                  <label htmlFor="paper-search" className="mt-5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Find a document</label>
+                  <div className="mt-2 flex items-center border-b border-[var(--border-soft)] bg-[var(--surface)] px-3 py-1 focus-within:border-[var(--accent)]">
+                    <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="shrink-0 text-[var(--text-muted)]"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+                    <input id="paper-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search filenames…" className="w-full min-w-0 bg-transparent px-3 py-3 text-sm outline-none" />
+                    {search && <button type="button" onClick={() => setSearch("")} className="px-2 text-xs text-[var(--accent-text)] hover:underline">Clear</button>}
+                  </div>
+                  {paperError && <p role="alert" className="mt-4 text-sm text-[var(--danger)]">{paperError}</p>}
+                  {loadingPapers ? <p className="py-8 text-sm text-[var(--text-muted)]">Loading documents…</p> : filteredPapers.length ? (
+                    <div className="recall-index-list mt-4">
+                      {filteredPapers.map((paper, index) => (
+                        <div key={paper.id} className="recall-index-entry group flex items-center gap-3 py-4 sm:gap-4">
+                          <span className="recall-index-number shrink-0">{String(index + 1).padStart(2, "0")}</span>
+                          <div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold text-[var(--foreground)]">{paper.filename}</p><p className="mt-1 text-xs text-[var(--text-muted)]">PDF · Indexed {dateLabel(paper.created_at)}</p></div>
+                          <a href={paperUrl(paper)} target="_blank" rel="noopener noreferrer" className="recall-index-action inline-flex shrink-0 items-center gap-1 border-b border-[var(--accent-border)] py-1 text-xs font-semibold text-[var(--accent-text)]">Open <UiIcon name="arrow-up-right" size={14}/></a>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="mt-6 text-sm text-stone-500">
-                      {papers.length
-                        ? "No matching papers."
-                        : "No papers indexed yet."}
-                    </p>
-                  )}
+                  ) : <p className="py-8 text-sm text-[var(--text-muted)]">{papers.length ? "No matching papers. Try a different search." : "No papers indexed yet. Add your first document."}</p>}
                 </section>
-
-                <section className="h-fit rounded-2xl border border-[#e1e7dd] bg-white p-6">
+                <div className="recall-archive-upload min-w-0">
+                  <div className="recall-index-section-heading"><div><span className="recall-index-number">02</span><h3>New source</h3></div></div>
+                  <div className="recall-archive-upload-content mt-5">
+                <section className="recall-archive-upload-form">
                   <h3 className="text-lg font-semibold">
                     Add a paper
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-stone-500">
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
                     Upload a PDF to extract text,
                     generate embeddings, and make it
                     searchable in Recall.
                   </p>
 
-                  <label className="mt-5 flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-[#b8ceba] bg-[#f7faf5] px-4 py-9 text-center hover:bg-[#eef5eb]">
-                    <span className="text-2xl text-[#5c8766]">
-                      â†‘
+                  <label className="mt-5 flex cursor-pointer flex-col items-center border border-dashed border-[var(--accent-border)] bg-[var(--surface-soft)] px-4 py-7 text-center hover:bg-[var(--accent-soft)]">
+                    <span className="text-2xl text-[var(--accent-text)]">
+                      <UiIcon name="arrow-up" size={26} />
                     </span>
 
                     <span className="mt-2 text-sm font-semibold">
                       Choose a PDF
                     </span>
 
-                    <span className="mt-1 max-w-full break-all text-xs text-stone-500">
+                    <span className="mt-1 max-w-full break-all text-xs text-[var(--text-muted)]">
                       {selectedFile?.name ||
                         "PDF files only"}
                     </span>
@@ -1248,7 +1098,7 @@ export default function Home() {
                     disabled={
                       !selectedFile || uploading
                     }
-                    className="mt-4 w-full rounded-xl bg-[#173e31] px-4 py-3 text-sm font-semibold text-white hover:bg-[#275442] disabled:opacity-50"
+                    className="mt-4 w-full rounded-md bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
                   >
                     {uploading
                       ? "Indexing paper..."
@@ -1258,7 +1108,7 @@ export default function Home() {
                   {uploadError && (
                     <p
                       role="alert"
-                      className="mt-3 text-sm text-rose-700"
+                      className="mt-3 text-sm text-[var(--danger)]"
                     >
                       {uploadError}
                     </p>
@@ -1267,12 +1117,14 @@ export default function Home() {
                   {uploadSuccess && (
                     <p
                       role="status"
-                      className="mt-3 text-sm text-emerald-800"
+                      className="mt-3 text-sm text-[var(--success)]"
                     >
                       {uploadSuccess}
                     </p>
                   )}
                 </section>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1280,15 +1132,15 @@ export default function Home() {
           {/* ASK RECALL */}
 
           {view === "ask" && (
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_250px]">
-              <section className="flex min-h-[680px] flex-col rounded-2xl border border-[#e1e7dd] bg-white">
-                <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5">
+            <div className={`recall-chat-layout recall-desk-grid grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_260px] ${openEvidence ? "recall-evidence-split" : ""}`}>
+              <section className="recall-chat recall-desk-inquiry flex min-h-0 flex-col overflow-hidden border border-[var(--border-soft)] bg-[var(--surface)]">
+                <div className="recall-desk-header flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border-soft)] px-5 py-3 md:px-6">
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6b9274]">
-                      Evidence-grounded assistant
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent-text)]">
+                      RESEARCH / CURRENT INQUIRY
                     </div>
 
-                    <h2 className="mt-1 text-xl font-semibold">
+                    <h2 className="recall-desk-title mt-1 max-w-full text-xl font-medium leading-snug text-[var(--foreground)]">
                       {activeId
                         ? conversations.find(
                             (conversation) =>
@@ -1300,102 +1152,12 @@ export default function Home() {
                     </h2>
                   </div>
 
-                  <span className="rounded-full bg-[#e7f1e3] px-3 py-1 text-[11px] font-semibold text-[#47744e]">
-                    Local RAG
-                  </span>
-                </div>
-
-                <div
-                  className="min-h-[380px] flex-1 space-y-6 overflow-y-auto px-5 py-7 md:px-7"
-                  aria-live="polite"
-                >
-                  {messages.length === 0 ? (
-                    <div className="flex min-h-[330px] flex-col items-center justify-center text-center">
-                      <div className="mb-5 rounded-2xl bg-[#e5f0dc] px-5 py-4 text-3xl text-[#47714f]">
-                        âœ³
-                      </div>
-
-                      <h3 className="text-2xl font-semibold tracking-tight">
-                        Start with a question.
-                      </h3>
-
-                      <p className="mt-3 max-w-sm text-sm leading-6 text-stone-500">
-                        Explore methods, findings,
-                        and limitations across the
-                        papers in your library.
-                        Recall will cite its sources.
-                      </p>
-
-                      <button
-                        onClick={() =>
-                          setView("library")
-                        }
-                        className="mt-5 text-sm font-semibold text-[#487f59] hover:underline"
-                      >
-                        Browse your papers â†’
-                      </button>
-                    </div>
-                  ) : (
-                    messages.map((message) => (
-                      <div
-                        key={message.key}
-                        className={
-                          message.role === "user"
-                            ? "flex justify-end"
-                            : "flex justify-start"
-                        }
-                      >
-                        <div
-                          className={
-                            message.role === "user"
-                              ? "max-w-[90%] rounded-2xl rounded-tr-sm bg-[#173e31] px-5 py-4 text-sm leading-7 text-white"
-                              : "w-full rounded-2xl border border-[#e6ebe2] bg-[#f9fbf7] px-5 py-5 text-sm leading-7 text-[#26372b]"
-                          }
-                        >
-                          {message.role ===
-                            "assistant" && (
-                            <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#64876d]">
-                              Recall Â· Research answer
-                            </div>
-                          )}
-
-                          <p className="whitespace-pre-wrap break-words">
-                            {message.content ||
-                              (asking
-                                ? "Searching your research..."
-                                : "")}
-                          </p>
-
-                          {message.role ===
-                            "assistant" &&
-                            sources(
-                              message.citations
-                            )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-
-                  <div ref={bottomRef} />
-                </div>
-
-                {queryError && (
-                  <p
-                    role="alert"
-                    className="mx-6 mb-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700"
-                  >
-                    {queryError}
-                  </p>
-                )}
-
-                <form
-                  onSubmit={ask}
-                  className="border-t border-stone-100 p-5"
-                >
-                  <div className="mb-4">
+                  <div className="recall-desk-scope flex min-w-0 items-center gap-3">
+                    <span className="recall-desk-index hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)] md:inline">SOURCE SET</span>
+                  <div className="recall-scope min-w-0">
                     <label
                       htmlFor="recall-collection"
-                      className="mb-2 block text-xs font-semibold text-stone-600"
+                      className="sr-only"
                     >
                       Search within
                     </label>
@@ -1418,7 +1180,7 @@ export default function Home() {
                         setQueryError("");
                         window.localStorage.removeItem(ACTIVE_KEY);
                       }}
-                      className="w-full rounded-xl border border-stone-200 bg-white p-3 text-sm text-stone-700 outline-none focus:border-[#609474] disabled:opacity-50"
+                      className="w-full min-w-0 border border-[var(--border-soft)] bg-[var(--surface-soft)] px-3 py-2 text-xs text-[var(--foreground)] outline-none focus:border-[var(--accent-border)] disabled:opacity-50"
                     >
                       <option value="">All Documents</option>
                       {collections.map((collection) => (
@@ -1429,18 +1191,209 @@ export default function Home() {
                     </select>
 
                     {collectionError && (
-                      <p className="mt-2 text-xs text-rose-700">
+                      <p className="mt-2 text-xs text-[var(--danger)]">
                         {collectionError}
                       </p>
                     )}
 
                     {selectedCollectionId !== null && (
-                      <p className="mt-2 text-xs text-stone-500">
+                      <p className="sr-only">
                         Answers will use the selected research collection.
                       </p>
                     )}
                   </div>
+                  </div>
+                </div>
 
+                <div
+                  ref={messagesRef}
+                  onScroll={(event) => {
+                    const element = event.currentTarget;
+                    followLatestRef.current =
+                      element.scrollHeight - element.scrollTop - element.clientHeight < 110;
+                  }}
+                  className="recall-messages recall-desk-messages min-h-0 flex-1 space-y-7 overflow-y-auto overscroll-contain px-5 py-5 md:px-8 md:py-7"
+                  aria-live="polite"
+                >
+                  {messages.length === 0 ? (
+                    <div className="flex min-h-[330px] flex-col items-center justify-center text-center">
+                      <div className="mb-5 rounded-md bg-[var(--accent-soft)] px-5 py-4 text-3xl text-[var(--accent-text)]">
+                        <UiIcon name="sparkles" size={28} />
+                      </div>
+
+                      <h3 className="text-2xl font-semibold tracking-tight">
+                        Start with a question.
+                      </h3>
+
+                      <p className="mt-3 max-w-sm text-sm leading-6 text-[var(--text-muted)]">
+                        Explore methods, findings,
+                        and limitations across the
+                        papers in your library.
+                        Recall will cite its sources.
+                      </p>
+
+                      <button
+                        onClick={() =>
+                          setView("library")
+                        }
+                        className="mt-5 text-sm font-semibold text-[var(--accent-text)] hover:underline"
+                      >
+                        Browse your papers <UiIcon name="arrow-right" size={15} className="ml-1 inline-block align-text-bottom" />
+                      </button>
+                    </div>
+                  ) : (
+                    messages.map((message) => (
+                      <div
+                        key={message.key}
+                        className={
+                          message.role === "user"
+                            ? "flex justify-end"
+                            : "flex justify-start"
+                        }
+                      >
+                        <div
+                          className={
+                            message.role === "user"
+                              ? "max-w-[90%] rounded-md rounded-tr-sm recall-user-bubble bg-[var(--primary)] px-5 py-4 text-sm leading-7 text-[var(--on-primary)]"
+                              : "recall-desk-answer w-full border-l-2 border-[var(--accent-border)] pl-4 pr-1 py-1 text-sm leading-7 text-[var(--foreground)] md:pl-5"
+                          }
+                        >
+                          {message.role ===
+                            "assistant" && (
+                            <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent-text)]">
+                              RECALL / FINDINGS
+                            </div>
+                          )}
+
+                          <p className="whitespace-pre-wrap break-words">
+                            {message.content ||
+                              (asking
+                                ? "Searching your research..."
+                                : "")}
+                          </p>
+
+                          {message.role ===
+                            "assistant" &&
+                            sources(
+                              message.citations
+                            )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  <div aria-hidden="true" />
+                </div>
+
+                {queryError && (
+                  <p
+                    role="alert"
+                    className="mx-6 mb-3 rounded-sm bg-[var(--danger-soft)] p-3 text-sm text-[var(--danger)]"
+                  >
+                    {queryError}
+                  </p>
+                )}
+
+                <form
+                  onSubmit={ask}
+                  className="recall-composer recall-desk-composer border-t border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 md:px-6"
+                >
+
+
+                  <label
+                    htmlFor="recall-question"
+                    className="sr-only"
+                  >
+                    Your question
+                  </label>
+
+                  <textarea
+                    id="recall-question"
+                    rows={2}
+                    maxLength={2000}
+                    disabled={asking}
+                    value={question}
+                    onChange={(event) =>
+                      setQuestion(
+                        event.target.value
+                      )
+                    }
+                    placeholder="What were the limitations of the gaze-following study?"
+                    className="recall-desk-textarea w-full resize-y border-0 bg-transparent px-1 py-2 text-sm outline-none focus:ring-0 disabled:opacity-50"
+                  />
+
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <span className="text-xs text-[var(--text-muted)]">
+                      {asking
+                        ? "Retrieving evidence and generating..."
+                        : "Grounded in indexed PDFs"}
+                    </span>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        asking ||
+                        !question.trim()
+                      }
+                      className="bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                    >
+                      {asking
+                        ? "Thinking..."
+                        : <>Ask Recall <UiIcon name="arrow-right" size={16} className="ml-1 inline-block align-text-bottom" /></>}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* RESEARCH CONTEXT */}
+
+              <aside className="recall-desk-rail min-h-0 space-y-5">
+                  {openEvidence ? (
+                    <PdfEvidenceViewer
+                      embedded
+                      key={`${openEvidence.paper.id}-${openEvidence.citation.page}-${openEvidence.citation.evidence ?? ""}`}
+                      url={`${API}/api/v1/documents/${openEvidence.paper.id}/pdf`}
+                      filename={openEvidence.paper.filename}
+                      initialPage={openEvidence.citation.page}
+                      evidence={openEvidence.citation.evidence}
+                      onClose={() => setOpenEvidence(null)}
+                    />
+                  ) : (
+                    <>
+                <div className="recall-desk-rail-intro border-b border-[var(--border-soft)] pb-4">
+                  <h3 className="text-sm font-semibold">
+                    Evidence desk
+                  </h3>
+
+                  <p className="mt-2 text-xs leading-6 text-[var(--text-muted)]">
+                    Sources, annotations and collections for your research.
+                  </p>
+
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <div className="text-xl font-semibold text-[var(--accent-text)]">
+                      {papers.length}
+                    </div>
+
+                    <div className="text-xs text-[var(--text-muted)]">
+                      Indexed papers available
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setView("library")
+                    }
+                    className="mt-3 inline-flex text-xs font-semibold text-[var(--accent-text)] hover:underline"
+                  >
+                    Manage library <UiIcon name="arrow-right" size={15} className="ml-1 inline-block align-text-bottom" />
+                  </button>
+                </div>
+
+                <div className="recall-tools space-y-3">
+                  <div className="px-1 pb-1">
+                    <h3 className="text-sm font-semibold">Research tools</h3>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">Your notes, evidence and collections, in one place.</p>
+                  </div>
                   <SavedBookmarks
                     papers={papers}
                     refreshToken={bookmarkRefreshToken}
@@ -1475,143 +1428,14 @@ export default function Home() {
                     collections={collections}
                     onCollectionsChanged={setCollections}
                   />
-                  <label
-                    htmlFor="recall-question"
-                    className="mb-2 block text-xs font-semibold text-stone-600"
-                  >
-                    Your question
-                  </label>
-
-                  <textarea
-                    id="recall-question"
-                    rows={3}
-                    maxLength={2000}
-                    disabled={asking}
-                    value={question}
-                    onChange={(event) =>
-                      setQuestion(
-                        event.target.value
-                      )
-                    }
-                    placeholder="What were the limitations of the gaze-following study?"
-                    className="w-full resize-none rounded-xl border border-stone-200 bg-[#fafbf9] p-4 text-sm outline-none focus:border-[#609474] disabled:opacity-50"
-                  />
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-xs text-stone-400">
-                      {asking
-                        ? "Retrieving evidence and generating..."
-                        : "Grounded in indexed PDFs"}
-                    </span>
-
-                    <button
-                      type="submit"
-                      disabled={
-                        asking ||
-                        !question.trim()
-                      }
-                      className="rounded-xl bg-[#173e31] px-5 py-3 text-sm font-semibold text-white hover:bg-[#275442] disabled:opacity-50"
-                    >
-                      {asking
-                        ? "Thinking..."
-                        : "Ask Recall â†’"}
-                    </button>
-                  </div>
-                </form>
-              </section>
-
-              {/* RESEARCH CONTEXT */}
-
-              <aside className="space-y-5">
-                <div className="rounded-2xl border border-[#e1e7dd] bg-white p-5">
-                  <h3 className="text-sm font-semibold">
-                    Research context
-                  </h3>
-
-                  <p className="mt-2 text-xs leading-6 text-stone-500">
-                    Recall searches your indexed
-                    papers and returns
-                    evidence-backed answers.
-                  </p>
-
-                  <div className="mt-4 rounded-xl bg-[#eef5e9] p-4">
-                    <div className="text-2xl font-semibold text-[#315a3b]">
-                      {papers.length}
-                    </div>
-
-                    <div className="mt-1 text-xs text-[#53745a]">
-                      Indexed papers available
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      setView("library")
-                    }
-                    className="mt-4 text-xs font-semibold text-[#467850] hover:underline"
-                  >
-                    Manage library â†’
-                  </button>
                 </div>
-
-                <div className="rounded-2xl border border-[#e1e7dd] bg-white p-5">
-                  <h3 className="text-sm font-semibold">
-                    Recent threads
-                  </h3>
-
-                  {historyError && (
-                    <p className="mt-3 text-xs text-rose-700">
-                      {historyError}
-                    </p>
+                    </>
                   )}
-
-                  {conversations
-                    .slice(0, 6)
-                    .map((conversation) => (
-                      <button
-                        key={conversation.id}
-                        disabled={asking}
-                        onClick={() =>
-                          void openConversation(
-                            conversation.id
-                          )
-                        }
-                        className="block w-full truncate border-b border-stone-100 py-3 text-left text-xs text-stone-600 hover:text-[#41754f] disabled:opacity-50"
-                        title={
-                          conversation.title
-                        }
-                      >
-                        {conversation.title}
-                      </button>
-                    ))}
-
-                  {conversations.length === 0 && (
-                    <p className="mt-3 text-xs text-stone-500">
-                      Your conversations will
-                      appear here.
-                    </p>
-                  )}
-                </div>
-              </aside>
+                </aside>
             </div>
           )}
         </div>
       </main>
-
-      {/* IN-APP PDF EVIDENCE VIEWER */}
-
-      {openEvidence && (
-        <PdfEvidenceViewer
-          key={`${openEvidence.paper.id}-${openEvidence.citation.page}-${openEvidence.citation.evidence ?? ""}`}
-          url={`${API}/api/v1/documents/${openEvidence.paper.id}/pdf`}
-          filename={openEvidence.paper.filename}
-          initialPage={openEvidence.citation.page}
-          evidence={openEvidence.citation.evidence}
-          onClose={() =>
-            setOpenEvidence(null)
-          }
-        />
-      )}
     </div>
   );
 }

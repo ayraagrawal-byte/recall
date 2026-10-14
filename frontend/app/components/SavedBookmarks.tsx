@@ -160,14 +160,14 @@ export default function SavedBookmarks({
   }
 
   return (
-    <section className="mb-4 rounded-xl border border-[#e1e7dd] bg-white p-4">
+    <section className="mb-4 rounded-md border border-[var(--border-soft)] bg-[var(--surface)] p-4">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => {
           setOpen(!open);
         }}
-        className="flex w-full items-center justify-between text-left text-sm font-semibold text-[#183e2c]"
+        className="flex w-full items-center justify-between text-left text-sm font-semibold text-[var(--foreground)]"
       >
         <span>Saved Bookmarks ({bookmarks.length})</span>
         <span>{open ? "−" : "+"}</span>
@@ -175,7 +175,7 @@ export default function SavedBookmarks({
 
       {open && (
         <div className="mt-4 space-y-3">
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-[var(--text-muted)]">
             Save and revisit evidence from Recall's cited answers.
           </p>
 
@@ -185,26 +185,26 @@ export default function SavedBookmarks({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search evidence, labels or PDFs..."
-              className="min-w-0 flex-1 rounded-lg border border-stone-200 p-3 text-sm"
+              className="min-w-0 flex-1 rounded-sm border border-[var(--border-soft)] p-3 text-sm"
             />
             <button
               type="button"
               disabled={loading || busy}
               onClick={() => void loadBookmarks()}
-              className="rounded-lg border border-stone-200 px-3 py-2 text-xs disabled:opacity-50"
+              className="rounded-sm border border-[var(--border-soft)] px-3 py-2 text-xs disabled:opacity-50"
             >
               Refresh
             </button>
           </div>
 
           {loading && (
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-[var(--text-muted)]">
               Loading bookmarks...
             </p>
           )}
 
           {!loading && visible.length === 0 && (
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-[var(--text-muted)]">
               No matching bookmarks yet.
             </p>
           )}
@@ -217,7 +217,7 @@ export default function SavedBookmarks({
             return (
               <article
                 key={bookmark.id}
-                className="rounded-xl border border-stone-200 p-4"
+                className="rounded-md border border-[var(--border-soft)] p-4"
               >
                 {editingId === bookmark.id ? (
                   <div className="space-y-2">
@@ -230,7 +230,7 @@ export default function SavedBookmarks({
                         onChange={(event) =>
                           setEditLabel(event.target.value)
                         }
-                        className="mt-2 w-full rounded-lg border border-stone-200 p-2 text-sm"
+                        className="mt-2 w-full rounded-sm border border-[var(--border-soft)] p-2 text-sm"
                       />
                     </label>
                     <div className="flex gap-2">
@@ -238,7 +238,7 @@ export default function SavedBookmarks({
                         type="button"
                         disabled={busy}
                         onClick={() => void saveLabel(bookmark)}
-                        className="rounded-lg bg-[#173e31] px-3 py-2 text-xs text-white disabled:opacity-50"
+                        className="rounded-sm bg-[var(--primary)] px-3 py-2 text-xs text-[var(--on-primary)] disabled:opacity-50"
                       >
                         Save label
                       </button>
@@ -246,26 +246,26 @@ export default function SavedBookmarks({
                         type="button"
                         disabled={busy}
                         onClick={() => setEditingId(null)}
-                        className="rounded-lg border border-stone-200 px-3 py-2 text-xs"
+                        className="rounded-sm border border-[var(--border-soft)] px-3 py-2 text-xs"
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <h4 className="text-sm font-semibold text-[#183e2c]">
+                  <h4 className="text-sm font-semibold text-[var(--foreground)]">
                     {bookmark.label || "Saved evidence"}
                   </h4>
                 )}
 
-                <p className="mt-2 text-xs text-stone-500">
+                <p className="mt-2 text-xs text-[var(--text-muted)]">
                   {paper?.filename ?? `Document ${bookmark.document_id}`}
                   {bookmark.page_number !== null
                     ? ` · Page ${bookmark.page_number}`
                     : ""}
                 </p>
 
-                <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-stone-700">
+                <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--foreground)]">
                   {bookmark.evidence}
                 </p>
 
@@ -278,7 +278,7 @@ export default function SavedBookmarks({
                         onOpenPdf(paper, bookmark.page_number);
                       }
                     }}
-                    className="rounded-lg bg-[#173e31] px-3 py-2 text-xs text-white disabled:opacity-50"
+                    className="rounded-sm bg-[var(--primary)] px-3 py-2 text-xs text-[var(--on-primary)] disabled:opacity-50"
                   >
                     Open PDF
                   </button>
@@ -291,7 +291,7 @@ export default function SavedBookmarks({
                       setEditLabel(bookmark.label ?? "");
                       setDeletingId(null);
                     }}
-                    className="rounded-lg border border-stone-200 px-3 py-2 text-xs disabled:opacity-50"
+                    className="rounded-sm border border-[var(--border-soft)] px-3 py-2 text-xs disabled:opacity-50"
                   >
                     Edit label
                   </button>
@@ -303,15 +303,15 @@ export default function SavedBookmarks({
                       setDeletingId(bookmark.id);
                       setEditingId(null);
                     }}
-                    className="rounded-lg border border-rose-200 px-3 py-2 text-xs text-rose-700 disabled:opacity-50"
+                    className="rounded-sm border border-[var(--danger-border)] px-3 py-2 text-xs text-[var(--danger)] disabled:opacity-50"
                   >
                     Remove
                   </button>
                 </div>
 
                 {deletingId === bookmark.id && (
-                  <div className="mt-3 rounded-lg border border-rose-200 p-3">
-                    <p className="text-xs text-rose-700">
+                  <div className="mt-3 rounded-sm border border-[var(--danger-border)] p-3">
+                    <p className="text-xs text-[var(--danger)]">
                       Remove this saved bookmark? The original PDF
                       and your research notes will not be deleted.
                     </p>
@@ -320,7 +320,7 @@ export default function SavedBookmarks({
                         type="button"
                         disabled={busy}
                         onClick={() => void removeBookmark(bookmark)}
-                        className="rounded-lg bg-rose-700 px-3 py-2 text-xs text-white disabled:opacity-50"
+                        className="rounded-sm bg-[var(--danger-solid)] px-3 py-2 text-xs text-white disabled:opacity-50"
                       >
                         Confirm remove
                       </button>
@@ -328,7 +328,7 @@ export default function SavedBookmarks({
                         type="button"
                         disabled={busy}
                         onClick={() => setDeletingId(null)}
-                        className="rounded-lg border border-stone-200 px-3 py-2 text-xs"
+                        className="rounded-sm border border-[var(--border-soft)] px-3 py-2 text-xs"
                       >
                         Cancel
                       </button>
@@ -340,13 +340,13 @@ export default function SavedBookmarks({
           })}
 
           {error && (
-            <p role="alert" className="text-xs text-rose-700">
+            <p role="alert" className="text-xs text-[var(--danger)]">
               {error}
             </p>
           )}
 
           {success && (
-            <p role="status" className="text-xs text-green-700">
+            <p role="status" className="text-xs text-[var(--accent-text)]">
               {success}
             </p>
           )}
