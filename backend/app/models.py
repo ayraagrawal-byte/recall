@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import ForeignKey, String, Text, JSON
+from sqlalchemy import ForeignKey, String, Text, JSON, Table, Column
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -19,6 +19,47 @@ class Base(DeclarativeBase):
     pass
 
 
+collection_documents = Table(
+    "collection_documents",
+    Base.metadata,
+    Column(
+        "collection_id",
+        ForeignKey("collections.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "document_id",
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+
+class Collection(Base):
+    __tablename__ = "collections"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        default=utc_now,
+    )
+
+    documents: Mapped[list["Document"]] = relationship(
+        secondary=collection_documents,
+        back_populates="collections",
+    )
+
+
 class Document(Base):
     __tablename__ = "documents"
 
@@ -26,6 +67,11 @@ class Document(Base):
     filename: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(
         default=datetime.utcnow
+    )
+
+    collections: Mapped[list["Collection"]] = relationship(
+        secondary=collection_documents,
+        back_populates="documents",
     )
 
     chunks: Mapped[list["Chunk"]] = relationship(

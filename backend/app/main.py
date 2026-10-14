@@ -5,7 +5,6 @@ import shutil
 import tempfile
 import requests
 from pathlib import Path
-from app.comparison import compare_papers
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,10 +12,11 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.conversations import router as conversations_router
+from app.collections import router as collections_router
 from app.conversation_memory import prepare_retrieval_question
 from app.database import SessionLocal
 from app.ingestion import ingest_document
-from app.models import Document, Conversation, Message, utc_now
+from app.models import Document, Collection, Conversation, Message, utc_now
 from app.rag import answer_question, stream_answer
 
 
@@ -39,16 +39,18 @@ app.add_middleware(
         "http://127.0.0.1:3000",
     ],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Content-Type"],
 )
 
 app.include_router(conversations_router)
+app.include_router(collections_router)
 
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     conversation_id: int | None = None
+    collection_id: int | None = Field(default=None, gt=0)
 
 
 class Citation(BaseModel):
@@ -60,20 +62,6 @@ class Citation(BaseModel):
 class QueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
-
-class CompareRequest(BaseModel):
-    document_ids: list[int] = Field(min_length=2, max_length=2)
-
-
-class ComparisonSection(BaseModel):
-    answer: str
-    citations: list[Citation]
-
-
-class CompareResponse(BaseModel):
-    paper_a: dict
-    paper_b: dict
-    sections: dict[str, ComparisonSection]
 
 @app.get("/")
 def root():
@@ -256,6 +244,37 @@ def view_document_pdf(document_id: int):
     )
 
 
+def resolve_collection_document_ids(collection_id: int | None):
+    """
+    None means unrestricted search.
+    An empty list means the collection has no documents.
+    """
+    if collection_id is None:
+        return None
+
+    with SessionLocal() as db:
+        collection = db.get(Collection, collection_id)
+
+        if collection is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Collection not found.",
+            )
+
+        document_ids = [
+            document.id
+            for document in collection.documents
+        ]
+
+        if not document_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="This collection contains no documents.",
+            )
+
+        return document_ids
+
+
 @app.post(
     "/api/v1/query",
     response_model=QueryResponse,
@@ -270,8 +289,18 @@ def query_recall(request: QueryRequest):
             detail="Question cannot be empty.",
         )
 
+    document_ids = resolve_collection_document_ids(
+        request.collection_id
+    )
+
     try:
-        result = answer_question(question)
+        if document_ids is None:
+            result = answer_question(question)
+        else:
+            result = answer_question(
+                question,
+                document_ids=document_ids,
+            )
 
     except Exception:
         raise HTTPException(
@@ -297,6 +326,10 @@ def query_recall_stream(request: QueryRequest):
             status_code=400,
             detail="Question cannot be empty.",
         )
+
+    document_ids = resolve_collection_document_ids(
+        request.collection_id
+    )
 
     # Validate the conversation before starting the stream.
     if request.conversation_id is not None:
@@ -324,8 +357,16 @@ def query_recall_stream(request: QueryRequest):
                 request.conversation_id,
             )
 
-            # Use the existing RAG pipeline.
-            for event in stream_answer(retrieval_question):
+            # Preserve the original behavior when no collection is selected.
+            if document_ids is None:
+                rag_events = stream_answer(retrieval_question)
+            else:
+                rag_events = stream_answer(
+                    retrieval_question,
+                    document_ids=document_ids,
+                )
+
+            for event in rag_events:
                 event_type = event.get("type")
                 content = event.get("content")
 
@@ -408,49 +449,3 @@ def query_recall_stream(request: QueryRequest):
             "X-Content-Type-Options": "nosniff",
         },
     )
-
-
-@app.post(
-    "/api/v1/compare",
-    response_model=CompareResponse,
-)
-def compare_documents(request: CompareRequest):
-    first_id, second_id = request.document_ids
-
-    if first_id == second_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Select two different papers.",
-        )
-
-    with SessionLocal() as db:
-        first = db.get(Document, first_id)
-        second = db.get(Document, second_id)
-
-        if first is None or second is None:
-            raise HTTPException(
-                status_code=404,
-                detail="One or both papers were not found.",
-            )
-
-        paper_a = {
-            "id": first.id,
-            "filename": first.filename,
-        }
-
-        paper_b = {
-            "id": second.id,
-            "filename": second.filename,
-        }
-
-    try:
-        return compare_papers(paper_a, paper_b)
-
-    except requests.RequestException:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "The local Ollama model is unavailable "
-                "or the comparison timed out."
-            ),
-        )

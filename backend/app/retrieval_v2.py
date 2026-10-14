@@ -4,16 +4,29 @@ from app.reranker import rerank_chunks
 from app.query_expansion import expand_query
 
 
-def search_chunks_v2(query: str, candidate_limit: int = 20, limit: int = 5):
+def search_chunks_v2(
+    query: str,
+    candidate_limit: int = 20,
+    limit: int = 5,
+    document_ids: list[int] | None = None,
+):
+    if document_ids is not None and not document_ids:
+        return []
+
     expanded_query = expand_query(query)
 
     # Vector search keeps the original natural-language question.
-    vector_results = search_chunks(query, limit=candidate_limit)
+    vector_results = search_chunks(
+        query,
+        limit=candidate_limit,
+        document_ids=document_ids,
+    )
 
     # BM25 gets the expanded query to improve lexical retrieval.
     bm25_results = search_chunks_bm25(
         expanded_query,
-        limit=candidate_limit
+        limit=candidate_limit,
+        document_ids=document_ids,
     )
 
     # Save retrieval ranks so we know how each chunk was found.

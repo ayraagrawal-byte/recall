@@ -131,7 +131,10 @@ Answer:
 """
 
 
-def answer_question(question: str):
+def answer_question(
+    question: str,
+    document_ids: list[int] | None = None,
+):
     """
     Standard non-streaming RAG answer.
     Used by the existing /api/v1/query endpoint.
@@ -143,6 +146,7 @@ def answer_question(question: str):
         question,
         candidate_limit=20,
         limit=5,
+        document_ids=document_ids,
     )
 
     retrieval_time = time.perf_counter() - start_time
@@ -201,7 +205,10 @@ def answer_question(question: str):
     }
 
 
-def stream_answer(question: str):
+def stream_answer(
+    question: str,
+    document_ids: list[int] | None = None,
+):
     """
     Stream Ollama-generated answer text while preserving
     Recall's existing source citation filtering.
@@ -216,6 +223,7 @@ def stream_answer(question: str):
         question,
         candidate_limit=20,
         limit=5,
+        document_ids=document_ids,
     )
 
     retrieval_time = time.perf_counter() - start_time
