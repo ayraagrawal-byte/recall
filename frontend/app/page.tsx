@@ -2,6 +2,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import CollectionManager from "./components/CollectionManager";
+import ResearchNotes from "./components/ResearchNotes";
+import SavedBookmarks from "./components/SavedBookmarks";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -14,6 +17,17 @@ type Paper = {
   id: number;
   filename: string;
   created_at: string;
+};
+
+type ResearchCollection = {
+  id: number;
+  name: string;
+  description: string | null;
+  document_count: number;
+  documents: {
+    id: number;
+    filename: string;
+  }[];
 };
 
 type Citation = {
@@ -102,6 +116,12 @@ function Stat({
 export default function Home() {
   const [view, setView] = useState<View>("overview");
 
+  const [collections, setCollections] = useState<ResearchCollection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] =
+    useState<number | null>(null);
+  const [collectionError, setCollectionError] = useState("");
+  const [loadingCollections, setLoadingCollections] = useState(true);
+
   const [papers, setPapers] = useState<Paper[]>([]);
   const [paperError, setPaperError] = useState("");
   const [loadingPapers, setLoadingPapers] = useState(true);
@@ -123,6 +143,16 @@ export default function Home() {
 
   const [search, setSearch] = useState("");
 
+  const [bookmarkSavingKey, setBookmarkSavingKey] = useState<string | null>(null);
+  const [bookmarkSavedKeys, setBookmarkSavedKeys] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [bookmarkError, setBookmarkError] = useState<{
+    key: string;
+    message: string;
+  } | null>(null);
+  const [bookmarkRefreshToken, setBookmarkRefreshToken] = useState(0);
+
   const [openEvidence, setOpenEvidence] = useState<{
     paper: Paper;
     citation: Citation;
@@ -133,6 +163,29 @@ export default function Home() {
   const activeIdRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
   const askingRef = useRef(false);
+  const collectionConversationIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    async function loadCollections() {
+      try {
+        const response = await fetch(`${API}/api/v1/collections`);
+        if (!response.ok) {
+          throw new Error("Could not load collections.");
+        }
+
+        const data: ResearchCollection[] = await response.json();
+        setCollections(data);
+      } catch (error) {
+        setCollectionError(
+          error instanceof Error ? error.message : "Collections unavailable."
+        );
+      } finally {
+        setLoadingCollections(false);
+      }
+    }
+
+    void loadCollections();
+  }, []);
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -193,6 +246,9 @@ export default function Home() {
 
   async function openConversation(id: number) {
     if (askingRef.current) return;
+
+    collectionConversationIdRef.current = null;
+    setSelectedCollectionId(null);
 
     const requestId = ++requestIdRef.current;
 
@@ -262,6 +318,8 @@ export default function Home() {
 
   function newChat() {
     if (askingRef.current) return;
+
+    collectionConversationIdRef.current = null;
 
     requestIdRef.current += 1;
     activeIdRef.current = null;
@@ -367,7 +425,10 @@ export default function Home() {
 
     if (!text || askingRef.current) return;
 
-    const conversationId = activeIdRef.current;
+    const conversationId =
+      selectedCollectionId === null
+        ? activeIdRef.current
+        : collectionConversationIdRef.current;
     const userKey = `user-${Date.now()}`;
     const assistantKey = `assistant-${Date.now()}`;
 
@@ -448,6 +509,7 @@ export default function Home() {
           body: JSON.stringify({
             question: text,
             conversation_id: conversationId,
+            collection_id: selectedCollectionId,
           }),
         }
       );
@@ -500,6 +562,10 @@ export default function Home() {
 
       const confirmedId: number = savedId;
 
+      if (selectedCollectionId !== null) {
+        collectionConversationIdRef.current = confirmedId;
+      }
+
       activeIdRef.current = confirmedId;
       setActiveId(confirmedId);
 
@@ -540,55 +606,133 @@ export default function Home() {
     return `${API}/api/v1/documents/${paper.id}/pdf${suffix}`;
   }
 
+  async function saveCitationBookmark(
+    paper: Paper,
+    citation: Citation,
+    key: string
+  ) {
+    if (bookmarkSavingKey !== null || bookmarkSavedKeys.has(key)) return;
+
+    setBookmarkSavingKey(key);
+    setBookmarkError(null);
+
+    const excerpt = citation.evidence?.trim();
+    const reference = citation.page == null
+      ? paper.filename
+      : `${paper.filename}, page ${citation.page}`;
+
+    const evidence = excerpt ||
+      `Source reference: ${reference}. No quoted evidence excerpt was provided.`;
+
+    try {
+      const response = await fetch(`${API}/api/v1/bookmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          document_id: paper.id,
+          collection_id: null,
+          page_number: citation.page,
+          evidence,
+          label: `Recall citation: ${paper.filename}`.slice(0, 255),
+        }),
+      });
+
+      if (!response.ok) {
+        let detail = `HTTP ${response.status}`;
+        try {
+          const result = await response.json();
+          if (typeof result.detail === "string") {
+            detail = result.detail;
+          }
+        } catch {
+          // Keep the HTTP status if the response is not JSON.
+        }
+        throw new Error(detail);
+      }
+
+      setBookmarkSavedKeys((previous) => new Set(previous).add(key));
+      setBookmarkRefreshToken((previous) => previous + 1);
+    } catch (error) {
+      setBookmarkError({
+        key,
+        message: error instanceof Error
+          ? error.message
+          : "Could not save bookmark.",
+      });
+    } finally {
+      setBookmarkSavingKey(null);
+    }
+  }
+
   function sources(citations: Citation[]) {
     if (!citations.length) return null;
 
     return (
       <div className="mt-5 border-t border-stone-200 pt-4">
         <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-stone-500">
-          Evidence & sources
+          Evidence &amp; sources
         </div>
 
         <div className="flex flex-wrap gap-2">
           {citations.map((citation, index) => {
-            const paper = papers.find(
-              (item) =>
-                item.filename === citation.filename
+            const matches = papers.filter(
+              (item) => item.filename === citation.filename
             );
 
-            const label =
-              citation.filename +
-              (citation.page == null
-                ? ""
-                : ` · p. ${citation.page}`);
+            const paper = matches.length === 1 ? matches[0] : null;
+
+            const label = citation.filename +
+              (citation.page == null ? "" : ` ? p. ${citation.page}`);
+
+            const key = `${paper?.id ?? "missing"}:${citation.page ?? "none"}:${citation.evidence ?? ""}`;
+            const isSaved = bookmarkSavedKeys.has(key);
+            const isSaving = bookmarkSavingKey === key;
+            const hasEvidence = Boolean(citation.evidence?.trim());
 
             if (!paper) {
               return (
                 <span
                   key={`${label}-${index}`}
                   className="rounded-lg bg-stone-100 px-3 py-2 text-xs text-stone-500"
-                  title="Original PDF unavailable"
+                  title={matches.length > 1
+                    ? "Multiple PDFs share this filename; unable to identify the source"
+                    : "Original PDF unavailable"}
                 >
-                  {label} · unavailable
+                  {label} ? {matches.length > 1 ? "ambiguous PDF" : "unavailable"}
                 </span>
               );
             }
 
             return (
-              <button
-                key={`${label}-${index}`}
-                type="button"
-                onClick={() =>
-                  setOpenEvidence({
-                    paper,
-                    citation,
-                  })
-                }
-                className="max-w-full truncate rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-xs font-medium text-emerald-900 hover:bg-emerald-100"
-                title={`View evidence in ${label}`}
-              >
-                {label} ↗
-              </button>
+              <div key={`${label}-${index}`} className="flex flex-col gap-1">
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setOpenEvidence({ paper, citation })}
+                    className="max-w-full truncate rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-xs font-medium text-emerald-900 hover:bg-emerald-100"
+                    title={`View evidence in ${label}`}
+                  >
+                    {label} ?
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void saveCitationBookmark(paper, citation, key)}
+                    disabled={isSaved || bookmarkSavingKey !== null}
+                    className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    title={hasEvidence
+                      ? "Save citation and evidence excerpt"
+                      : "Save source reference (no evidence excerpt provided)"}
+                  >
+                    {isSaved ? "Saved ?" : isSaving ? "Saving..." : "Save Bookmark"}
+                  </button>
+                </div>
+                {bookmarkError?.key === key && (
+                  <p role="alert" className="text-xs text-rose-700">
+                    {bookmarkError.message}
+                  </p>
+                )}
+              </div>
             );
           })}
         </div>
@@ -650,7 +794,7 @@ export default function Home() {
               }`}
             >
               <span className="mr-3 opacity-75">
-                {["◫", "▤", "✳"][index]}
+                {["â—«", "â–¤", "âœ³"][index]}
               </span>
 
               {
@@ -668,11 +812,11 @@ export default function Home() {
           </div>
 
           <div className="hidden cursor-not-allowed rounded-xl px-4 py-3 text-sm text-[#718d80] lg:block">
-            ⇄ <span className="ml-2">Compare papers</span>
+            â‡„ <span className="ml-2">Compare papers</span>
           </div>
 
           <div className="hidden cursor-not-allowed rounded-xl px-4 py-3 text-sm text-[#718d80] lg:block">
-            ▫ <span className="ml-2">Collections</span>
+            â–« <span className="ml-2">Collections</span>
           </div>
         </nav>
 
@@ -739,7 +883,7 @@ export default function Home() {
                   title="Delete conversation"
                   className="px-2 text-[#9eb6a9] hover:text-rose-200 disabled:opacity-50"
                 >
-                  ×
+                  Ã—
                 </button>
               </div>
             ))}
@@ -803,7 +947,7 @@ export default function Home() {
                     onClick={newChat}
                     className="rounded-xl bg-[#173e31] px-5 py-3 text-sm font-semibold text-white hover:bg-[#285641]"
                   >
-                    Ask your papers ↗
+                    Ask your papers â†—
                   </button>
 
                   <button
@@ -820,7 +964,7 @@ export default function Home() {
                   label="Indexed papers"
                   value={
                     loadingPapers
-                      ? "—"
+                      ? "â€”"
                       : String(papers.length)
                   }
                   note="In your research library"
@@ -830,7 +974,7 @@ export default function Home() {
                   label="Research threads"
                   value={
                     loadingHistory
-                      ? "—"
+                      ? "â€”"
                       : String(conversations.length)
                   }
                   note="Saved conversations"
@@ -860,7 +1004,7 @@ export default function Home() {
                       onClick={() => setView("library")}
                       className="text-xs font-semibold text-[#3d7153] hover:underline"
                     >
-                      View library →
+                      View library â†’
                     </button>
                   </div>
 
@@ -904,7 +1048,7 @@ export default function Home() {
                       </div>
 
                       <span className="text-stone-400">
-                        ↗
+                        â†—
                       </span>
                     </a>
                   ))}
@@ -1041,7 +1185,7 @@ export default function Home() {
                             rel="noopener noreferrer"
                             className="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold hover:border-[#86ae8d] hover:text-[#387449]"
                           >
-                            Open ↗
+                            Open â†—
                           </a>
                         </div>
                       ))}
@@ -1068,7 +1212,7 @@ export default function Home() {
 
                   <label className="mt-5 flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-[#b8ceba] bg-[#f7faf5] px-4 py-9 text-center hover:bg-[#eef5eb]">
                     <span className="text-2xl text-[#5c8766]">
-                      ↑
+                      â†‘
                     </span>
 
                     <span className="mt-2 text-sm font-semibold">
@@ -1168,7 +1312,7 @@ export default function Home() {
                   {messages.length === 0 ? (
                     <div className="flex min-h-[330px] flex-col items-center justify-center text-center">
                       <div className="mb-5 rounded-2xl bg-[#e5f0dc] px-5 py-4 text-3xl text-[#47714f]">
-                        ✳
+                        âœ³
                       </div>
 
                       <h3 className="text-2xl font-semibold tracking-tight">
@@ -1188,7 +1332,7 @@ export default function Home() {
                         }
                         className="mt-5 text-sm font-semibold text-[#487f59] hover:underline"
                       >
-                        Browse your papers →
+                        Browse your papers â†’
                       </button>
                     </div>
                   ) : (
@@ -1211,7 +1355,7 @@ export default function Home() {
                           {message.role ===
                             "assistant" && (
                             <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#64876d]">
-                              Recall · Research answer
+                              Recall Â· Research answer
                             </div>
                           )}
 
@@ -1248,6 +1392,89 @@ export default function Home() {
                   onSubmit={ask}
                   className="border-t border-stone-100 p-5"
                 >
+                  <div className="mb-4">
+                    <label
+                      htmlFor="recall-collection"
+                      className="mb-2 block text-xs font-semibold text-stone-600"
+                    >
+                      Search within
+                    </label>
+
+                    <select
+                      id="recall-collection"
+                      value={selectedCollectionId ?? ""}
+                      disabled={asking || loadingCollections}
+                      onChange={(event) => {
+                        const id = event.target.value
+                          ? Number(event.target.value)
+                          : null;
+
+                        setSelectedCollectionId(id);
+                        collectionConversationIdRef.current = null;
+                        requestIdRef.current += 1;
+                        setActiveId(null);
+                        activeIdRef.current = null;
+                        setMessages([]);
+                        setQueryError("");
+                        window.localStorage.removeItem(ACTIVE_KEY);
+                      }}
+                      className="w-full rounded-xl border border-stone-200 bg-white p-3 text-sm text-stone-700 outline-none focus:border-[#609474] disabled:opacity-50"
+                    >
+                      <option value="">All Documents</option>
+                      {collections.map((collection) => (
+                        <option key={collection.id} value={collection.id}>
+                          {collection.name} ({collection.document_count} papers)
+                        </option>
+                      ))}
+                    </select>
+
+                    {collectionError && (
+                      <p className="mt-2 text-xs text-rose-700">
+                        {collectionError}
+                      </p>
+                    )}
+
+                    {selectedCollectionId !== null && (
+                      <p className="mt-2 text-xs text-stone-500">
+                        Answers will use the selected research collection.
+                      </p>
+                    )}
+                  </div>
+
+                  <SavedBookmarks
+                    papers={papers}
+                    refreshToken={bookmarkRefreshToken}
+                    onOpenPdf={(paper, page) =>
+                      setOpenEvidence({
+                        paper,
+                        citation: {
+                          filename: paper.filename,
+                          page,
+                          evidence: null,
+                        },
+                      })
+                    }
+                  />
+
+                  <ResearchNotes
+                    papers={papers}
+                    collections={collections}
+                    onOpenPdf={(paper, page) =>
+                      setOpenEvidence({
+                        paper,
+                        citation: {
+                          filename: paper.filename,
+                          page,
+                          evidence: null,
+                        },
+                      })
+                    }
+                  />
+
+                  <CollectionManager
+                    collections={collections}
+                    onCollectionsChanged={setCollections}
+                  />
                   <label
                     htmlFor="recall-question"
                     className="mb-2 block text-xs font-semibold text-stone-600"
@@ -1287,7 +1514,7 @@ export default function Home() {
                     >
                       {asking
                         ? "Thinking..."
-                        : "Ask Recall →"}
+                        : "Ask Recall â†’"}
                     </button>
                   </div>
                 </form>
@@ -1323,7 +1550,7 @@ export default function Home() {
                     }
                     className="mt-4 text-xs font-semibold text-[#467850] hover:underline"
                   >
-                    Manage library →
+                    Manage library â†’
                   </button>
                 </div>
 
