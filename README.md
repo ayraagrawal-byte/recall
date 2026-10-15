@@ -6,7 +6,7 @@
 
 A full-stack research workspace that combines retrieval-augmented generation (RAG), hybrid document search, and a source-linked PDF reader. Upload papers, ask research questions, and inspect the evidence behind each answer.
 
-**[Explore the controlled demo](https://recall-research-workspace-demo.vercel.app)** Â· **[Inside Recall: AI execution replay](https://recall-research-workspace-demo.vercel.app/inside-recall)**
+**[Explore the controlled demo](https://recall-research-workspace-demo.vercel.app)** · **[Inside Recall: AI execution replay](https://recall-research-workspace-demo.vercel.app/inside-recall)**
 
 </div>
 
@@ -156,16 +156,16 @@ npm run build
 
 ```text
 recall/
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ app/                 # FastAPI, ingestion, retrieval, RAG, research tools
-â”‚   â”œâ”€â”€ tests/               # Backend tests
-â”‚   â””â”€â”€ requirements.txt
-â”œâ”€â”€ frontend/
-â”‚   â”œâ”€â”€ app/                 # Research Index, Library, Desk, Inside Recall
-â”‚   â””â”€â”€ public/
-â”‚       â”œâ”€â”€ demo-papers/     # Fictional, shareable example PDFs
-â”‚       â””â”€â”€ demo-traces/     # Approved execution replay and index
-â””â”€â”€ docker-compose.yml      # Local PostgreSQL + pgvector
+├── backend/
+│   ├── app/                 # FastAPI, ingestion, retrieval, RAG, research tools
+│   ├── tests/               # Backend tests
+│   └── requirements.txt
+├── frontend/
+│   ├── app/                 # Research Index, Library, Desk, Inside Recall
+│   └── public/
+│       ├── demo-papers/     # Fictional, shareable example PDFs
+│       └── demo-traces/     # Approved execution replay and index
+└── docker-compose.yml      # Local PostgreSQL + pgvector
 ```
 
 ## Privacy and demo limitations
@@ -184,6 +184,6 @@ The core research experience and controlled portfolio demo are implemented. Poss
 
 <div align="center">
 
-**recall.** â€” Your research, remembered.
+**recall.** — Your research, remembered.
 
 </div>
