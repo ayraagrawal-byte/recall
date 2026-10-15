@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import InsideRecallAppearance from "./InsideRecallAppearance";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Citation = { filename: string; page: number | null; evidence?: string | null; pdf_url?: string };
@@ -62,7 +63,7 @@ export default function InsideRecall(){
  const sample=trace?.retrieval?.chunks??[];
  const pdfUrl=(citation:Citation)=> {if(citation.pdf_url?.startsWith("/demo-papers/") && !citation.pdf_url.includes(".."))return citation.pdf_url;return DEMO_PDFS[citation.filename]??null;};
  return <main className="ir-shell">
- <div className="ir-top"><Link href="/" className="ir-wordmark">recall<span>.</span></Link><span className="ir-rule"/><span className="ir-eyebrow">INSIDE RECALL / PROCESS EXPLORER</span><Link href="/" className="ir-back">← Research workspace</Link></div>
+ <div className="ir-top"><Link href="/" className="ir-wordmark">recall<span>.</span></Link><span className="ir-rule"/><span className="ir-eyebrow">INSIDE RECALL / PROCESS EXPLORER</span><InsideRecallAppearance /><Link href="/" className="ir-back">← Research workspace</Link></div>
  <div className="ir-content"><div className="ir-intro"><span className="ir-eyebrow">THE RESEARCH ENGINE / 001</span><h1>Follow the evidence.</h1><p>Inspect an actual recorded run of Recall's retrieval-augmented generation pipeline. Explore retrieved passages, replay model output, and follow citations back to documents.</p></div>
  <div className="ir-control"><div><strong>{trace?"Recorded execution":"Explore a genuine AI execution"}</strong><p>{trace?`${trace.question} · ${new Date(trace.captured_at).toLocaleString()}`:"Select an approved trace captured from the actual Recall pipeline. Playback does not run live inference."}</p></div>
  <div className="ir-selector"><label htmlFor="ir-recording">RECORDED INQUIRY</label><select id="ir-recording" value={activeTraceId} onChange={e=>void loadPublic(e.target.value)} disabled={loadingTrace || !library.length}><option value="">{library.length?"Choose a recorded question":"Recordings coming soon"}</option>{library.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select></div>
