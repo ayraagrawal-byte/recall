@@ -92,6 +92,17 @@ For the public demo, the Next.js frontend uses curated example data and bundled 
 | Development & testing | Docker Compose, pytest, TypeScript, Next.js build |
 | Public demo hosting | Vercel (frontend-only, controlled mode) |
 
+
+## Branch guide
+
+| Branch | What to inspect |
+| --- | --- |
+| [`main`](https://github.com/ayraagrawal-byte/recall/tree/main) | Repository introduction, screenshots, and earlier application snapshot |
+| [`recall-2.0`](https://github.com/ayraagrawal-byte/recall/tree/recall-2.0) | Full local research workspace, collections, notes, bookmarks, and live RAG backend |
+| [`recall-demo`](https://github.com/ayraagrawal-byte/recall/tree/recall-demo) | Controlled public frontend and Inside Recall recorded execution replay |
+
+Use `recall-2.0` for the live local setup below. Features described across the project are not all present in the older `main` frontend. The public demo runs the demo branch; it is not a hosted live RAG service.
+
 ## Local setup
 
 **Prerequisites:** Python, Node.js/npm, Docker Desktop with Docker Compose, and [Ollama](https://ollama.com/). A machine capable of running the local language model is required for live generation.
