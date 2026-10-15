@@ -832,6 +832,13 @@ export default function Home() {
           ))}
         </nav>
 
+        <div className="px-3 pb-4">
+          <a href="/inside-recall" className="recall-nav-inactive flex items-center gap-3 rounded-md px-4 py-3 text-sm transition" aria-label="Inside Recall — AI process explorer">
+            <span aria-hidden="true" className="recall-mono text-xs text-[var(--copper-light)]">↳</span>
+            Inside Recall <span className="ml-auto text-[10px] opacity-70">AI TRACE</span>
+          </a>
+        </div>
+
         <div className="hidden min-h-0 flex-1 flex-col border-t border-white/10 px-4 py-5 lg:flex">
           <div className="mb-3 flex items-center justify-between px-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--sidebar-muted)]">

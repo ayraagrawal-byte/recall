@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "trace_kind": "recorded",
+  "question": "What does the gaze-following demonstration explain about how infants interpret eye direction?",
+  "captured_at": "2026-10-15T02:26:33.599183+00:00",
+  "model": "gemma3:4b",
+  "retrieval": {
+    "method": "Vector + expanded-query BM25; cross-encoder reranking; top-result preservation",
+    "elapsed_ms": 312,
+    "chunks": [
+      {
+        "rank": 1,
+        "filename": "recall-demo-gaze.pdf",
+        "page": 1,
+        "content": "RECALL / PORTFOLIO DEMONSTRATION\nIllustrative Gaze-Following Study\nThis is fictional instructional content prepared for the Recall portfolio demonstration. It is not a published\nstudy and does not report empirical findings.\nDemo excerpt\nIn this illustrative study, gaze cues were compared across open-eye and closed-eye conditions.\nPurpose: show source-linked citations, PDF reading, navigation, and bookmarks in the Recall interface.\n",
+        "id": 438,
+        "vector_rank": 1,
+        "bm25_rank": 1,
+        "score": -0.7230129837989807,
+        "score_kind": "Cross-encoder score"
+      },
+      {
+        "rank": 2,
+        "filename": "recall-demo-number-sense.pdf",
+        "page": 1,
+        "content": "RECALL / PORTFOLIO DEMONSTRATION\nIllustrative Number-Sense Study\nThis is fictional instructional content prepared for the Recall portfolio demonstration. It is not a published\nstudy and does not report empirical findings.\nDemo excerpt\nIn this illustrative study, infants observed comparisons between two sets of objects.\nPurpose: show source-linked citations, PDF reading, navigation, and bookmarks in the Recall interface.\n",
+        "id": 439,
+        "vector_rank": 2,
+        "bm25_rank": 2,
+        "score": -6.526151180267334,
+        "score_kind": "Cross-encoder score"
+      }
+    ]
+  },
+  "generation": {
+    "events": [
+      {
+        "at_ms": 0,
+        "content": "Th"
+      },
+      {
+        "at_ms": 111,
+        "content": "is ga"
+      },
+      {
+        "at_ms": 222,
+        "content": "ze-fo"
+      },
+      {
+        "at_ms": 332,
+        "content": "llowing d"
+      },
+      {
+        "at_ms": 443,
+        "content": "emonstr"
+      },
+      {
+        "at_ms": 556,
+        "content": "ation"
+      },
+      {
+        "at_ms": 664,
+        "content": " "
+      },
+      {
+        "at_ms": 809,
+        "content": "exp"
+      },
+      {
+        "at_ms": 943,
+        "content": "lain"
+      },
+      {
+        "at_ms": 1074,
+        "content": "s that "
+      },
+      {
+        "at_ms": 1224,
+        "content": "g"
+      },
+      {
+        "at_ms": 1376,
+        "content": "aze"
+      },
+      {
+        "at_ms": 1496,
+        "content": " cues were "
+      },
+      {
+        "at_ms": 1610,
+        "content": "c"
+      },
+      {
+        "at_ms": 1761,
+        "content": "om"
+      },
+      {
+        "at_ms": 1917,
+        "content": "pared a"
+      },
+      {
+        "at_ms": 2077,
+        "content": "c"
+      },
+      {
+        "at_ms": 2204,
+        "content": "ro"
+      },
+      {
+        "at_ms": 2339,
+        "content": "s"
+      },
+      {
+        "at_ms": 2478,
+        "content": "s"
+      },
+      {
+        "at_ms": 2601,
+        "content": " "
+      },
+      {
+        "at_ms": 2741,
+        "content": "open-eye and closed-eye conditions."
+      }
+    ],
+    "answer": "This gaze-following demonstration explains that gaze cues were compared across open-eye and closed-eye conditions.",
+    "elapsed_ms": 2741
+  },
+  "citations": [
+    {
+      "filename": "recall-demo-gaze.pdf",
+      "page": 1,
+      "evidence": "RECALL / PORTFOLIO DEMONSTRATION\nIllustrative Gaze-Following Study\nThis is fictional instructional content prepared for the Recall portfolio demonstration. It is not a published\nstudy and does not report empirical findings.\nDemo excerpt\nIn this illustrative study, gaze cues were compared across open-eye and closed-eye conditions.\nPurpose: show source-linked citations, PDF reading, navigation, and bookmarks in the Recall interface.\n"
+    }
+  ],
+  "duration_ms": 21973,
+  "notes": "Captured from one real local app.rag.stream_answer() execution. Ranks reflect returned selection order, not guaranteed reranker order. No retrieval scores are invented. This standalone run bypasses the conversation endpoint and its conversation-memory rewriting."
+}
