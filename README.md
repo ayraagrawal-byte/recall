@@ -6,7 +6,7 @@
 
 A full-stack research workspace that combines retrieval-augmented generation (RAG), hybrid document search, and a source-linked PDF reader. Upload papers, ask research questions, and inspect the evidence behind each answer.
 
-**[Explore the controlled demo](https://recall-demo-m4u048zvn-ayraagrawal-byte.vercel.app)** Â· **[Inside Recall: AI execution replay](https://recall-demo-m4u048zvn-ayraagrawal-byte.vercel.app/inside-recall)**
+**[Explore the controlled demo](https://recall-research-workspace-demo.vercel.app)** Â· **[Inside Recall: AI execution replay](https://recall-research-workspace-demo.vercel.app/inside-recall)**
 
 </div>
 
