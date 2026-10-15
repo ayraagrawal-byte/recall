@@ -12,6 +12,24 @@ A full-stack research workspace that combines retrieval-augmented generation (RA
 
 > **Demo vs. live system:** The public Vercel experience is a controlled portfolio demo with fictional sample PDFs and an authentic **recorded** RAG execution. It does **not** run live Ollama inference or accept public uploads. The complete RAG pipeline runs locally with FastAPI, PostgreSQL/pgvector, and Ollama.
 
+## Screenshots
+
+Full-page screenshots captured from the public deployment on October 14, 2026.
+
+### Research workspace
+
+[Open the research workspace](https://recall-research-workspace-demo.vercel.app/)
+
+![Recall research workspace overview](docs/screenshots/recall-workspace.jpg)
+
+### Inside Recall
+
+[Open Inside Recall](https://recall-research-workspace-demo.vercel.app/inside-recall)
+
+![Inside Recall execution explorer showing the Question stage workflow preview](docs/screenshots/inside-recall.jpg)
+
+The captured Inside Recall page shows the Question stage workflow preview before a recorded inquiry is selected.
+
 ## Why Recall?
 
 Reading research papers often means moving between PDFs, notes, search results, and AI-generated summaries, with no easy way to verify where a claim came from. Recall keeps the research workflow in one place: ask a question, inspect the relevant source passages, and open the cited PDF page directly from the answer.
