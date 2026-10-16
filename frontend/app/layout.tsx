@@ -21,9 +21,24 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const siteDescription =
+  "A full-stack research workspace with hybrid RAG retrieval and citations that open the exact source PDF page.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://recall-research-workspace-demo.vercel.app"),
   title: "Recall — Your Research, Remembered",
-  description: "Your research, remembered.",
+  description: siteDescription,
+  openGraph: {
+    type: "website",
+    siteName: "Recall",
+    title: "Recall — Research answers you can trace to the source",
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Recall — Research answers you can trace to the source",
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
